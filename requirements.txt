@@ -1,0 +1,8 @@
+# runtime dependencies of the aedev.project_vars project
+ae_base
+ae_paths
+ae_core
+ae_shell
+ae_template
+aedev_base
+aedev_commands
