@@ -1,4 +1,4 @@
-# THIS FILE IS EXCLUSIVELY MAINTAINED by the project aedev.project_tpls v0.3.68
+# THIS FILE IS EXCLUSIVELY MAINTAINED by the project aedev.project_tpls v0.3.70
 """ setup of aedev namespace module portion project_vars: project development variables. """
 # noinspection PyUnresolvedReferences
 import sys
@@ -15,24 +15,23 @@ setup_kwargs = {
         'Programming Language :: Python :: 3.12', 'Topic :: Software Development :: Libraries :: Python Modules',
         'Typing :: Typed'],
     'description': 'aedev namespace module portion project_vars: project development variables',
-    'extras_require': {       'dev': [       'aedev_project_tpls', 'aedev_aedev', 'anybadge', 'coverage-badge', 'aedev_project_manager',
-                       'flake8', 'mypy', 'pylint', 'pytest', 'pytest-cov', 'pytest-django', 'typing',
-                       'types-setuptools'],
+    'extras_require': {       'dev': [       'aedev_project_tpls', 'aedev_aedev', 'anybadge', 'coverage-badge', 'flake8', 'mypy', 'pylint',
+                       'pytest', 'pytest-cov', 'pytest-django', 'typing', 'types-setuptools'],
         'docs': [],
-        'tests': [       'anybadge', 'coverage-badge', 'aedev_project_manager', 'flake8', 'mypy', 'pylint', 'pytest',
-                         'pytest-cov', 'pytest-django', 'typing', 'types-setuptools']},
+        'tests': [       'anybadge', 'coverage-badge', 'flake8', 'mypy', 'pylint', 'pytest', 'pytest-cov',
+                         'pytest-django', 'typing', 'types-setuptools']},
     'install_requires': ['ae_base', 'ae_paths', 'ae_core', 'ae_shell', 'ae_template', 'aedev_base', 'aedev_commands'],
     'keywords': ['configuration', 'development', 'environment', 'productivity'],
     'license': 'GPL-3.0-or-later',
     'long_description': ('<!-- THIS FILE IS EXCLUSIVELY MAINTAINED by the project aedev.aedev v0.3.28 -->\n'
  '<!-- THIS FILE IS EXCLUSIVELY MAINTAINED by the project aedev.namespace_root_tpls v0.3.21 -->\n'
- '# project_vars 0.3.1\n'
+ '# project_vars 0.3.2\n'
  '\n'
  '[![GitLab develop](https://img.shields.io/gitlab/pipeline/aedev-group/aedev_project_vars/develop?logo=python)](\n'
  '    https://gitlab.com/aedev-group/aedev_project_vars)\n'
  '[![LatestPyPIrelease](\n'
- '    https://img.shields.io/gitlab/pipeline/aedev-group/aedev_project_vars/release0.3.1?logo=python)](\n'
- '    https://gitlab.com/aedev-group/aedev_project_vars/-/tree/release0.3.1)\n'
+ '    https://img.shields.io/gitlab/pipeline/aedev-group/aedev_project_vars/release0.3.2?logo=python)](\n'
+ '    https://gitlab.com/aedev-group/aedev_project_vars/-/tree/release0.3.2)\n'
  '[![PyPIVersions](https://img.shields.io/pypi/v/aedev_project_vars)](\n'
  '    https://pypi.org/project/aedev-project-vars/#history)\n'
  '\n'
@@ -107,9 +106,9 @@ setup_kwargs = {
         'Documentation': 'https://aedev.readthedocs.io/en/latest/_autosummary/aedev.project_vars.html',
         'Repository': 'https://gitlab.com/aedev-group/aedev_project_vars',
         'Source': 'https://aedev.readthedocs.io/en/latest/_modules/aedev/project_vars.html'},
-    'python_requires': '>=3.9',
+    'python_requires': '>=3.12',
     'url': 'https://gitlab.com/aedev-group/aedev_project_vars',
-    'version': '0.3.1',
+    'version': '0.3.2',
     'zip_safe': True,
 }
 

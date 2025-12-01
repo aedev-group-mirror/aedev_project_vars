@@ -1,7 +1,6 @@
 """ unit tests for the aedev.project_vars portion. """
 import os
 import shutil
-import sys
 import warnings
 
 from unittest.mock import patch
@@ -9,8 +8,6 @@ from unittest.mock import patch
 import setuptools
 
 from packaging.version import Version
-
-from tests.conftest import skip_gitlab_ci
 
 from ae.base import (
     BUILD_CONFIG_FILE, DEF_PROJECT_PARENT_FOLDER, DOCS_FOLDER, PACKAGE_INCLUDE_FILES_PREFIX,
@@ -21,12 +18,12 @@ from ae.template import TEMPLATE_PLACEHOLDER_ID_PREFIX
 from aedev.base import (
     APP_PRJ, COMMIT_MSG_FILE_NAME, DJANGO_PRJ, MODULE_PRJ, NO_PRJ, PACKAGE_PRJ, PARENT_PRJ, PLAYGROUND_PRJ, ROOT_PRJ,
     VERSION_PREFIX, VERSION_QUOTE)
-from aedev.commands import active_venv, git_clone, in_venv
+from aedev.commands import git_clone
 
 from aedev.project_vars import (
     ENV_VAR_NAME_PREFIX, PDV_MIN_PYTHON_VERSION, PDV_NULL_VERSION, PDV_PARENT_FOLDERS,
     PDV_REQ_DEV_FILE_NAME, PDV_REQ_FILE_NAME, PDV_TEMPLATES_FOLDER, PDV_repo_domain,
-    editable_project_root_path, find_extra_modules, frozen_req_file_path, increment_version, latest_remote_version,
+    find_extra_modules, frozen_req_file_path, increment_version, latest_remote_version,
     main_file_path, namespace_guess, pdv_default_values, pdv_env_values, project_owner_name_version,
     replace_file_version, root_packages_masks, skip_files_lean_web, skip_files_migrations,
     ProjectDevVars)
@@ -34,27 +31,6 @@ from aedev.project_vars import (
 
 class TestHelpers:
     """ test helper functions """
-
-    def test_editable_project_root_path(self, tmp_path, monkeypatch):
-        pkg_name = 'tst_pkg_editable'
-        root_dir = 'any_prj_root_folder'
-        egg_link_file = os_path_join(str(tmp_path), pkg_name + '.egg-link')
-        monkeypatch.setattr(sys, 'path', [str(tmp_path)] + list(sys.path))
-        write_file(egg_link_file, root_dir)
-
-        assert editable_project_root_path(pkg_name) == root_dir
-
-    @skip_gitlab_ci
-    def test_editable_project_root_path_local(self):
-        if active_venv().startswith('aedev3'):
-            assert not editable_project_root_path('ae_base')
-        else:
-            assert not editable_project_root_path('aedev_project_tpls')
-        with in_venv('ae312'):
-            assert not editable_project_root_path('ae_base')
-        with in_venv('aedev39'):
-            prj = 'aedev_project_manager'
-            assert editable_project_root_path(prj) == norm_path(os_path_join("~", DEF_PROJECT_PARENT_FOLDER, prj))
 
     def test_find_extra_modules(self):
         assert 'setup' in find_extra_modules("", TEMPLATES_FOLDER)

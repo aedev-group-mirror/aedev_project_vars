@@ -146,7 +146,6 @@ import getpass
 import glob
 import os
 import re
-import sys
 import warnings
 
 from collections import OrderedDict
@@ -163,7 +162,7 @@ from ae.base import (                                                           
     os_path_sep, os_path_splitext, project_main_file, read_file, write_file)
 from ae.paths import coll_folders, path_files, path_items, skip_py_cache_files, Collector               # type: ignore
 from ae.core import debug_out                                                                           # type: ignore
-from ae.shell import get_domain_user_var, sh_exec                                                       # type: ignore
+from ae.shell import get_domain_user_var                                                                # type: ignore
 from ae.template import (                                  # type: ignore # noqa: F401 # pylint: disable=unused-import
     TEMPLATE_PLACEHOLDER_ID_PREFIX, TEMPLATE_PLACEHOLDER_ID_SUFFIX, TEMPLATE_PLACEHOLDER_ARGS_SUFFIX,
     TEMPLATE_INCLUDE_FILE_PLACEHOLDER_ID, TEMPLATE_REPLACE_WITH_PLACEHOLDER_ID)
@@ -177,10 +176,10 @@ from aedev.base import (                                                        
 from aedev.commands import (                                                                            # type: ignore
     GIT_FOLDER_NAME, GIT_RELEASE_REF_PREFIX, GIT_REMOTE_ORIGIN, GIT_REMOTE_UPSTREAM, GIT_VERSION_TAG_PREFIX,
     GitRemotesType,
-    in_prj_dir_venv, git_remote_domain_group, git_remotes, git_tag_list)
+    editable_project_root_path, in_prj_dir_venv, git_remote_domain_group, git_remotes, git_tag_list)
 
 
-__version__ = '0.3.1'
+__version__ = '0.3.2'
 
 
 # PDV_* constants holding default values of all user/project specific configuration  ----------------------------------
@@ -241,29 +240,6 @@ PdvVarValType = Union[str, Sequence[str], DataFilesType, GitRemotesType, SetupKw
 """ project development variable value types, including also types of later/externally added vars by pjm, like e.g.
 'TemplateProjectsType' for the 'project_templates' variable, or 'RemoteHost' for the 'host_api' variable,
 or dict[str, str] for the 'main_app_options' variable (already covered via SetupKwargsType/dict[str, Any]. """
-
-
-def editable_project_root_path(project_name: str) -> str:
-    """ determine the project path of a project package installed as editable.
-
-    :param project_name:        project|package name to search for.
-    :return:                    project source root path of an editable installed package
-                                or empty string, if the package is not installed as editable.
-    """
-    field_prefix = 'Editable project location: '
-    output: list[str] = []
-    if sh_exec(f"pip show {project_name}", lines_output=output) == 0:
-        for line in output:
-            if line.startswith(field_prefix):
-                return line[len(field_prefix):]
-
-    # fallback if pip is an older version (before 21, without PEP 660 support)
-    for install_path in sys.path:
-        egg_link_file = os_path_join(install_path, project_name + '.egg-link')
-        if os_path_isfile(egg_link_file):
-            return read_file(egg_link_file).split(os.linesep)[0]
-
-    return ""
 
 
 def find_extra_modules(package_path: str, tpls_folder: str) -> list[str]:
@@ -939,8 +915,9 @@ class ProjectDevVars(dict[str, PdvVarValType]):
         dev_requires = self.pdv_val('dev_requires')
 
         if 'portions_packages' not in self:
-            pre = f'{namespace_name}_'
-            self['portions_packages'] = [_ for _ in dev_requires if _.startswith(pre) and _ != pre + namespace_name]
+            self['portions_packages'] = [   # excluding self-reference of its own template/root package, e.g. to prevent
+                _ for _ in dev_requires     # endless recursion in _compile_dev_vars() for namespace root packages
+                if _.startswith(f'{namespace_name}_') and project_name != _.split(PROJECT_VERSION_SEP)[0]]
         if 'docs_requires' not in self:
             self['docs_requires'] = _package_list(os_path_join(project_path, self['DOCS_FOLDER'], req_file_name))
         if 'install_requires' not in self:
