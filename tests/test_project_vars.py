@@ -212,7 +212,7 @@ class TestHelpers:
 
         os.remove(main_file)
 
-        main_file = os_path_join(por_dir, "main" + PY_EXT)
+        main_file = os_path_join(por_dir, 'main' + PY_EXT)
         write_file(main_file, "# main file of non-namespace project")
 
         assert not namespace_guess(project_path)
@@ -236,7 +236,7 @@ class TestHelpers:
 
         os.remove(main_file)
 
-        main_file = os_path_join(por_dir, "main" + PY_EXT)
+        main_file = os_path_join(por_dir, 'main' + PY_EXT)
         write_file(main_file, "# main file of namespace root main")
 
         assert namespace_guess(project_path) == namespace
@@ -450,8 +450,8 @@ class TestProjectDevVars:
     """ test ProjectDevVars """
 
     def test_app_env(self, cons_app, tmp_path):
-        file_name = os_path_join(str(tmp_path), BUILD_CONFIG_FILE)
-        write_file(file_name, "spec")
+        file_name = os_path_join(str(tmp_path), 'main' + PY_EXT)
+        write_file(file_name, "# main app file content")
 
         pdv = ProjectDevVars(project_path=str(tmp_path))
 
@@ -600,7 +600,7 @@ class TestProjectDevVars:
         module_prj_path = os_path_join(parent_dir, nsn + '_' + module_name)
         module_path = os_path_join(module_prj_path, nsn, module_name + PY_EXT)
 
-        app_options = {'repo_group': "tst_grp"}
+        app_options = {'repo_group': "tst_grp", 'main_app_options': {'project_path': root_prj_path}}
 
         os.makedirs(root_pkg_path)
         write_file(os_path_join(root_pkg_path, PY_INIT),
@@ -1222,9 +1222,9 @@ class TestProjectTypeAndResources:
         parent_dir = os_path_join(str(tmp_path), DEF_PROJECT_PARENT_FOLDER)
         project_name = 'app_project'
         project_path = os_path_join(parent_dir, project_name)
-        file_name = os_path_join(project_path, BUILD_CONFIG_FILE)
+        file_name = os_path_join(project_path, 'main' + PY_EXT)
         os.makedirs(project_path)
-        write_file(file_name, "spec content")
+        write_file(file_name, "# python main app file content")
 
         pdv = ProjectDevVars(project_path=project_path)
 
@@ -1241,8 +1241,8 @@ class TestProjectTypeAndResources:
         project_path = os_path_join(parent_dir, project_name)
         namespace_sub_dir = os_path_join(project_path, namespace_name)
         os.makedirs(namespace_sub_dir)
-        write_file(os_path_join(namespace_sub_dir, "main" + PY_EXT), "# app main file")
-        write_file(os_path_join(project_path, BUILD_CONFIG_FILE), "spec content")
+        write_file(os_path_join(namespace_sub_dir, 'main' + PY_EXT), "# app main file")
+        # needed for kivy app: write_file(os_path_join(project_path, BUILD_CONFIG_FILE), "# build spec content")
 
         pdv = ProjectDevVars(project_path=project_path)
 
@@ -1256,7 +1256,7 @@ class TestProjectTypeAndResources:
         project_name = 'appName'
         project_path = os_path_join(parent_dir, project_name)
         os.makedirs(project_path)
-        write_file(os_path_join(project_path, "main" + PY_EXT), "# app main module")
+        write_file(os_path_join(project_path, 'main' + PY_EXT), "# app main module")
         write_file(os_path_join(project_path, BUILD_CONFIG_FILE), "spec content")
 
         pdv = ProjectDevVars(project_path=project_path)
