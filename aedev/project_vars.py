@@ -179,7 +179,7 @@ from aedev.commands import (                                                    
     editable_project_root_path, in_prj_dir_venv, git_remote_domain_group, git_remotes, git_tag_list)
 
 
-__version__ = '0.3.2'
+__version__ = '0.3.3'
 
 
 # PDV_* constants holding default values of all user/project specific configuration  ----------------------------------
@@ -552,10 +552,10 @@ class ProjectDevVars(dict[str, PdvVarValType]):
             if namespace_name else
             " ".join(self[_] for _ in ('project_name', 'project_type', 'project_version')))
 
-        chi_app_options = {_o: _v for _o, _v in self.pdv_val('main_app_options').items()
-                           if _v not in ('project_name', 'project_path')} \
-            if 'main_app_options' in self and project_type in (PARENT_PRJ, ROOT_PRJ) else {}
-
+        chi_app_options = {}
+        if project_type in (PARENT_PRJ, ROOT_PRJ) and 'main_app_options' in self:
+            chi_app_options = {_name: _value for _name, _value in self.pdv_val('main_app_options').items()
+                               if _name not in ('project_name', 'project_path')}
         if project_type == ROOT_PRJ:
             namespace_len = len(namespace_name)
 
@@ -851,10 +851,10 @@ class ProjectDevVars(dict[str, PdvVarValType]):
         version_file = self['version_file']
         namespace_name = self['namespace_name']
 
-        if project_name.endswith('_playground'):
+        if project_name.endswith('_playground'):                    # could have a 'main' + PY_EXT file in project root
             project_type = PLAYGROUND_PRJ
-        elif os_path_isfile(os_path_join(project_path, self['BUILD_CONFIG_FILE'])):
-            project_type = APP_PRJ
+        elif os_path_isfile(os_path_join(project_path, namespace_name, 'main' + PY_EXT)):
+            project_type = APP_PRJ                                  # kivy-app if self['BUILD_CONFIG_FILE'] in prj root
         elif os_path_isfile(os_path_join(project_path, 'manage.py')):
             project_type = DJANGO_PRJ
         elif project_name == namespace_name + '_' + namespace_name:
