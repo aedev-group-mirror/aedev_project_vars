@@ -179,7 +179,7 @@ from aedev.commands import (                                                    
     editable_project_root_path, in_prj_dir_venv, git_remote_domain_group, git_remotes, git_tag_list)
 
 
-__version__ = '0.3.4'
+__version__ = '0.3.5'
 
 
 # PDV_* constants holding default values of all user/project specific configuration  ----------------------------------

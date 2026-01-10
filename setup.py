@@ -57,7 +57,7 @@ setup_kwargs = {
         'ae_paths',
         'ae_core',
         'ae_shell',
-        'ae_template',
+        'ae_managed_files',
         'aedev_base',
         'aedev_commands',
     ],
@@ -85,7 +85,7 @@ setup_kwargs = {
     },
     'python_requires': '>=3.12',
     'url': 'https://gitlab.com/aedev-group/aedev_project_vars',
-    'version': '0.3.4',
+    'version': '0.3.5',
     'zip_safe': True,
 }
 
