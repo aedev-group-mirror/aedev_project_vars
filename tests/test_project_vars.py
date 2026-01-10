@@ -14,7 +14,7 @@ from ae.base import (
     PY_CACHE_FOLDER, PY_EXT, PY_INIT, TEMPLATES_FOLDER, TESTS_FOLDER,
     in_wd, norm_path, os_path_basename, os_path_dirname, os_path_isdir, os_path_isfile, os_path_join, os_path_relpath,
     os_path_splitext, read_file, write_file)
-from ae.template import TEMPLATE_PLACEHOLDER_ID_PREFIX
+from ae.managed_files import TEMPLATE_PLACEHOLDER_ID_PREFIX
 from aedev.base import (
     APP_PRJ, COMMIT_MSG_FILE_NAME, DJANGO_PRJ, MODULE_PRJ, NO_PRJ, PACKAGE_PRJ, PARENT_PRJ, PLAYGROUND_PRJ, ROOT_PRJ,
     VERSION_PREFIX, VERSION_QUOTE)
@@ -262,7 +262,7 @@ class TestHelpers:
         assert 'PARENT_FOLDERS' in values  # from aedev.project_vars
         assert values['PARENT_FOLDERS'] == PDV_PARENT_FOLDERS
 
-        assert 'TEMPLATE_PLACEHOLDER_ID_PREFIX' in values  # from ae.template
+        assert 'TEMPLATE_PLACEHOLDER_ID_PREFIX' in values  # from ae.managed_files
         assert values['TEMPLATE_PLACEHOLDER_ID_PREFIX'] == TEMPLATE_PLACEHOLDER_ID_PREFIX
 
         assert 'TEMPLATE_PLACEHOLDER_ID_SUFFIX' in values
