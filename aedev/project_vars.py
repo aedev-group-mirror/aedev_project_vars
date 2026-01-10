@@ -163,7 +163,7 @@ from ae.base import (                                                           
 from ae.paths import coll_folders, path_files, path_items, skip_py_cache_files, Collector               # type: ignore
 from ae.core import debug_out                                                                           # type: ignore
 from ae.shell import get_domain_user_var                                                                # type: ignore
-from ae.template import (                                  # type: ignore # noqa: F401 # pylint: disable=unused-import
+from ae.managed_files import (                             # type: ignore # noqa: F401 # pylint: disable=unused-import
     TEMPLATE_PLACEHOLDER_ID_PREFIX, TEMPLATE_PLACEHOLDER_ID_SUFFIX, TEMPLATE_PLACEHOLDER_ARGS_SUFFIX,
     TEMPLATE_INCLUDE_FILE_PLACEHOLDER_ID, TEMPLATE_REPLACE_WITH_PLACEHOLDER_ID)
 from aedev.base import (                                                                                # type: ignore
@@ -179,7 +179,7 @@ from aedev.commands import (                                                    
     editable_project_root_path, in_prj_dir_venv, git_remote_domain_group, git_remotes, git_tag_list)
 
 
-__version__ = '0.3.3'
+__version__ = '0.3.4'
 
 
 # PDV_* constants holding default values of all user/project specific configuration  ----------------------------------
@@ -950,9 +950,9 @@ class ProjectDevVars(dict[str, PdvVarValType]):
         warning_error = errors.append if warnings_as_error else warnings.warn
 
         if not self['AUTHOR']:
-            warning_error("author name is missing - specify via PDV_AUTHOR in OS environment or config file")
+            warning_error("author name is missing - specify via PDV_AUTHOR in OS environment/.env or config file")
         if not self['AUTHOR_EMAIL']:
-            warning_error("author email address is missing - specify aa PDV_AUTHOR_EMAIL in OS environment/.env file")
+            warning_error("author email address is missing - specify via PDV_AUTHOR_EMAIL in OS environment/.env file")
 
         project_path = self['project_path']
         if project_path != norm_path(project_path):
