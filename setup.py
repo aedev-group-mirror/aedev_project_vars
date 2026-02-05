@@ -1,4 +1,4 @@
-# THIS FILE IS EXCLUSIVELY MAINTAINED by the project aedev.project_tpls v0.3.72
+# THIS FILE IS EXCLUSIVELY MAINTAINED by the project aedev.project_tpls v0.3.75
 """ setup of aedev namespace module portion project_vars: project development variables. """
 import sys
 # noinspection PyUnresolvedReferences
@@ -53,6 +53,8 @@ setup_kwargs = {
         ],
     },
     'install_requires': [
+        'packaging',
+        'setuptools',
         'ae_base',
         'ae_paths',
         'ae_core',
@@ -85,7 +87,7 @@ setup_kwargs = {
     },
     'python_requires': '>=3.12',
     'url': 'https://gitlab.com/aedev-group/aedev_project_vars',
-    'version': '0.3.5',
+    'version': '0.3.6',
     'zip_safe': True,
 }
 

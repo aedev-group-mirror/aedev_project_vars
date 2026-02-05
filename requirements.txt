@@ -1,4 +1,6 @@
 # runtime dependencies of the aedev.project_vars project
+packaging
+setuptools
 ae_base
 ae_paths
 ae_core
