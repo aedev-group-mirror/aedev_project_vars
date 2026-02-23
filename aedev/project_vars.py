@@ -169,7 +169,7 @@ from ae.managed_files import (                             # type: ignore # noqa
 from aedev.base import (                                                                                # type: ignore
     ALL_PRJ_TYPES, ANY_PRJ_TYPE, APP_PRJ, COMMIT_MSG_FILE_NAME, DEF_MAIN_BRANCH,
     DJANGO_PRJ, MODULE_PRJ, NO_PRJ, PACKAGE_PRJ, PARENT_PRJ, PLAYGROUND_PRJ,
-    PROJECT_VERSION_SEP, PYPI_ROOT_URL, PYPI_ROOT_URL_TEST, ROOT_PRJ,
+    PROJECT_VERSION_SEP, PYPI_ROOT_URL, PYPI_ROOT_URL_TEST, ROOT_PRJ, TEST_PROJECTS_PARENT_FOLDER,
     VERSION_MATCHER, VERSION_PREFIX, VERSION_QUOTE,
     TemplateProjectsType,
     code_file_title, code_file_version)
@@ -179,7 +179,7 @@ from aedev.commands import (                                                    
     editable_project_root_path, in_prj_dir_venv, git_remote_domain_group, git_remotes, git_tag_list)
 
 
-__version__ = '0.3.6'
+__version__ = '0.3.7'
 
 
 # PDV_* constants holding default values of all user/project specific configuration  ----------------------------------
@@ -205,7 +205,7 @@ PDV_NULL_VERSION = '0.3.0'                              #: initial package versi
 
 PDV_PARENT_FOLDERS = (
     'Projects', 'PycharmProjects', 'ae-group', 'aedev-group', 'code', 'dev', 'esc', 'old_src', 'projects', 'python',
-    'repos', 'source', DEF_PROJECT_PARENT_FOLDER, 'TsT', getpass.getuser())
+    'repos', 'source', DEF_PROJECT_PARENT_FOLDER, TEST_PROJECTS_PARENT_FOLDER, getpass.getuser())
 """ names of parent folders containing Python project directories """
 
 PDV_PYTHON_REQUIRES = f">={PDV_MIN_PYTHON_VERSION}"     #: default required Python version of project
@@ -563,7 +563,7 @@ class ProjectDevVars(dict[str, PdvVarValType]):
             por_vars: ChildrenType = OrderedDict()
             pypi_refs_rst = []
             pypi_refs_md = []
-            pypi_test = self['parent_folder'] == 'TsT'
+            pypi_test = self['parent_folder'] == TEST_PROJECTS_PARENT_FOLDER
             for project_nam_ver in cast(list[str], self.pdv_val('portions_packages')):
                 p_name = project_nam_ver.split(PROJECT_VERSION_SEP)[0]
                 portion_path = os_path_join(os_path_dirname(project_path), p_name)
@@ -630,7 +630,7 @@ class ProjectDevVars(dict[str, PdvVarValType]):
             self['repo_url'] = f"{repo_root}/{project_name}"
 
         if 'pypi_url' not in self and self['pip_name']:
-            pypi_test = os_path_basename(os_path_dirname(self['project_path'])) == 'TsT'
+            pypi_test = os_path_basename(os_path_dirname(self['project_path'])) == TEST_PROJECTS_PARENT_FOLDER
             self['pypi_url'] = f"{PYPI_ROOT_URL_TEST if pypi_test else PYPI_ROOT_URL}/project/{self['pip_name']}"
 
     def _compile_setup_kwargs(self):
