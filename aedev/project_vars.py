@@ -35,28 +35,15 @@ project development variables data includes:
 determine project development variables
 ---------------------------------------
 
-the :class:`ProjectDevVars` provided by this portion is a dictionary subclass that analyzes and represents project
-development variables. it collects defaults, merges environment variables, inspects the filesystem, and compiles
-values suitable for packaging and publishing. to collect the data of a project, create a new instance of this class.
+the :class:`ProjectDevVars` class provided by this portion is a dictionary subclass that represents the project
+development variables. On instantiation, it is analyzing the project folder, collecting defaults, merging environment
+variables, and compiles values suitable for packaging and publishing.
 
-this is done for existing projects by specifying only the path to the project's root folder. from there the project
-directory tree get analyzed,  gathering the project properties - the project development variables -
-into dictionary-like data structure instance.
-
-key methods of ProjectDevVars
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-* :meth:`ProjectDevVars.as_dict` – export pdv values as a plain dict.
-* :meth:`ProjectDevVars.copy` – create a new :class:`ProjectDevVars` with copied values.
-* :meth:`ProjectDevVars.errors` – validate pdv values and return a list of errors/warnings.
-* :meth:`ProjectDevVars.pdv_val` – fetch a variable’s value, falling back to defaults.
-
-if the current working directory is the root directory of a Python project to analyze,
-then the instance (assigned to the ``pdv`` variable in the following examples) can be created by the following call,
-without the need to specify any arguments::
+to collect the data of a project, create a new instance of this class::
 
     pdv = ProjectDevVars()
 
+for existing projects no arguments are needed if the current working directory is the project root folder. in order
 to analyze a project in any other directory specify the path via the
 :paramref:`~ProjectDevVars.project_path` keyword argument::
 
@@ -73,8 +60,19 @@ recognized project types are e.g. :data:`a module <MODULE_PRJ>`, :data:`a packag
 :data:`a namespace root <ROOT_PRJ>`, or an :data:`gui application <APP_PRJ>`.
 
 determining the project development variables of projects with the types :data:`PARENT_PRJ`
-or :data:`ROOT_PRJ` will gather also the project dev vars of their containing children projects,
-each of them represented by its own instance of the :class:`ProjectDevVars` class.
+or :data:`ROOT_PRJ` will gather also the project dev vars of their containing children projects.
+these children dev variables are stored as list in the parent project development
+variable `children_project_vars`, where each item is an instance of the :class:`ProjectDevVars` class,
+representing a child project.
+
+
+key methods of a ProjectDevVars instance
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+* :meth:`ProjectDevVars.as_dict` – export pdv values as a plain dict.
+* :meth:`ProjectDevVars.copy` – create a new :class:`ProjectDevVars` with copied values.
+* :meth:`ProjectDevVars.errors` – validate pdv values and return a list of errors/warnings.
+* :meth:`ProjectDevVars.pdv_val` – fetch a variable’s value, falling back to defaults.
 
 
 project introspection helpers and constants
@@ -179,7 +177,7 @@ from aedev.commands import (                                                    
     editable_project_root_path, in_prj_dir_venv, git_remote_domain_group, git_remotes, git_tag_list)
 
 
-__version__ = '0.3.7'
+__version__ = '0.3.8'
 
 
 # PDV_* constants holding default values of all user/project specific configuration  ----------------------------------
@@ -395,6 +393,27 @@ def pdv_env_values() -> dict[str, Any]:
     return values
 
 
+def project_name_guess(project_path: str) -> str:
+    """ guess name of project name from project root directory path (also for backups under old_src parent directory).
+
+    :param project_path:        absolute/normalized project root directory path.
+    :return:                    guessed project name.
+    """
+    project_name = os_path_basename(project_path)
+    project_name = re.split(r"\d{2,}", project_name)[0]     # cut at old_version_idx (min. 2 digits)
+
+    parts = []
+    for part in project_name.split("_"):
+        parts.append(part)
+        prj_nam = "_".join(parts)
+        if os_path_isfile(os_path_join(project_path, prj_nam + PY_EXT)):        # module
+            return prj_nam
+        if os_path_isfile(os_path_join(project_path, *parts, PY_INIT)):         # package|Django
+            return prj_nam
+
+    return project_name
+
+
 def project_owner_name_version(project_string: str,
                                owner_default: str = "", namespace_default: str = "", version_default: str = ""
                                ) -> tuple[str, str, str]:
@@ -504,10 +523,10 @@ class ProjectDevVars(dict[str, PdvVarValType]):
         :param var_values:          fixed dev var values, overwriting OS environment variables and defaults.
                                     to get the project dev variable values from an existing project pass the
                                     `project_path` kwarg with the path of the project root folder.
-                                    if this `project_path` kwarg is not specified then its value defaults to
-                                    the current working directory (if the `project_name`kwarg is not specified),
-                                    or to the directory underneath the current working directory, specified by
-                                    the `project_name` kwarg.
+                                    the project path defaults to the current working directory, if the kwargs
+                                    `project_path` and `project_name` are not specified; if only `project_name`
+                                    is specified then it defaults to the folder with the project name situated
+                                    underneath the current working directory.
         :raises:                    AssertionError if `project_path` and `project_name` are specified.
         :return:                    special mapping with all the determinable project development variable values.
         """
@@ -788,7 +807,7 @@ class ProjectDevVars(dict[str, PdvVarValType]):
 
         project_path = self['project_path'] = norm_path(self['project_path'] or self['project_name'])
         if not self['project_name']:
-            self['project_name'] = os_path_basename(project_path)
+            self['project_name'] = project_name_guess(project_path)
         project_name = self['project_name']
         self['parent_folder'] = os_path_basename(os_path_dirname(project_path))
         if 'remote_urls' not in self:
@@ -967,7 +986,7 @@ class ProjectDevVars(dict[str, PdvVarValType]):
         if parent_folder not in parent_folders:
             warning_error(f"parent folder name {parent_folder} not in {parent_folders=}; extend via PDV_PARENT_FOLDERS")
 
-        if project_type not in (NO_PRJ, PARENT_PRJ) and os_path_basename(project_path) != self['project_name']:
+        if project_type not in (NO_PRJ, PARENT_PRJ) and project_name_guess(project_path) != self['project_name']:
             errors.append(f"invalid project name {self['project_name']}; expected {os_path_basename(project_path)}")
 
         if project_type not in (MODULE_PRJ, NO_PRJ, PACKAGE_PRJ, ROOT_PRJ) and self['namespace_name']:
