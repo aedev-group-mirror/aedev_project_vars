@@ -24,7 +24,8 @@ from aedev.project_vars import (
     ENV_VAR_NAME_PREFIX, PDV_MIN_PYTHON_VERSION, PDV_NULL_VERSION, PDV_PARENT_FOLDERS,
     PDV_REQ_DEV_FILE_NAME, PDV_REQ_FILE_NAME, PDV_TEMPLATES_FOLDER, PDV_repo_domain,
     find_extra_modules, frozen_req_file_path, increment_version, latest_remote_version,
-    main_file_path, namespace_guess, pdv_default_values, pdv_env_values, project_owner_name_version,
+    main_file_path, namespace_guess, pdv_default_values, pdv_env_values,
+    project_name_guess, project_owner_name_version,
     replace_file_version, root_packages_masks, skip_files_lean_web, skip_files_migrations,
     ProjectDevVars)
 
@@ -322,12 +323,62 @@ class TestHelpers:
 
         assert values[tuple_var[len(ENV_VAR_NAME_PREFIX):]] == tuple_val
 
+    def test_project_name_guess_from_basename(self):
+        assert project_name_guess("") == ""
+        assert project_name_guess("prj") == "prj"
+        assert project_name_guess("/path/to/prj_root") == "prj_root"
+
+    def test_project_name_guess_from_old_backups(self):
+        assert project_name_guess("/path/to/prj_root00") == "prj_root"
+        assert project_name_guess("/path/to/prj_root03comment") == "prj_root"
+        assert project_name_guess("/path/to/prj_root06_comment") == "prj_root"
+
+    def test_project_name_guess_from_project_content(self, tmp_path):
+        parent_path = os_path_join(str(tmp_path), DEF_PROJECT_PARENT_FOLDER)
+
+        root_path = os_path_join(parent_path, 'module00comment')
+        write_file(os_path_join(root_path, 'module.py'), "", make_dirs=True)
+        assert project_name_guess(root_path) == "module"
+
+        root_path = os_path_join(parent_path, 'mod_ule00comment')
+        write_file(os_path_join(root_path, 'mod_ule.py'), "", make_dirs=True)
+        assert project_name_guess(root_path) == "mod_ule"
+
+        root_path = os_path_join(parent_path, 'package00comment')   # same structure like Django project
+        write_file(os_path_join(root_path, 'package', PY_INIT), "", make_dirs=True)
+        assert project_name_guess(root_path) == "package"
+
+        root_path = os_path_join(parent_path, 'pack_age00comment')
+        write_file(os_path_join(root_path, 'pack_age', PY_INIT), "", make_dirs=True)
+        assert project_name_guess(root_path) == "pack_age"
+
+        root_path = os_path_join(parent_path, 'namespace_module00comment')
+        write_file(os_path_join(root_path, 'namespace', 'module.py'), "", make_dirs=True)
+        assert project_name_guess(root_path) == "namespace_module"
+
+        root_path = os_path_join(parent_path, 'namespace_mod_ule00comment')
+        write_file(os_path_join(root_path, 'namespace', 'mod_ule.py'), "", make_dirs=True)
+        assert project_name_guess(root_path) == "namespace_mod_ule"
+
+        root_path = os_path_join(parent_path, 'namespace_package00comment')
+        write_file(os_path_join(root_path, 'namespace', 'package.py'), "", make_dirs=True)
+        assert project_name_guess(root_path) == "namespace_package"
+
+        root_path = os_path_join(parent_path, 'namespace_pack_age00comment')
+        write_file(os_path_join(root_path, 'namespace', 'pack_age.py'), "", make_dirs=True)
+        assert project_name_guess(root_path) == "namespace_pack_age"
+
+        root_path = os_path_join(parent_path, 'app_name00comment')
+        write_file(os_path_join(root_path, 'main.py'), "", make_dirs=True)
+        assert project_name_guess(root_path) == "app_name"
+
     def test_project_owner_name_version(self):
         assert project_owner_name_version('project') == ("", 'project', "")
         assert project_owner_name_version("project==3.3.3") == ("", "project", "3.3.3")
         assert project_owner_name_version('prj' + "==" + '1.2.3') == ("", 'prj', '1.2.3')
         assert project_owner_name_version("owner/project==1.2.3") == ("owner", "project", "1.2.3")
 
+    def test_project_owner_name_version_with_defaults(self):
         assert project_owner_name_version('prj', owner_default='ow', version_default='2.3.4') == ('ow', 'prj', '2.3.4')
         assert project_owner_name_version("prj==1.2.3", owner_default='owner') == ('owner', "prj", "1.2.3")
         assert project_owner_name_version("ow/prj==1.2.3", owner_default='owner') == ('ow', "prj", "1.2.3")

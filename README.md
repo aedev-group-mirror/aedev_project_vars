@@ -1,12 +1,12 @@
-<!-- THIS FILE IS EXCLUSIVELY MAINTAINED by the project aedev.aedev v0.3.30 -->
-<!-- THIS FILE IS EXCLUSIVELY MAINTAINED by the project aedev.namespace_root_tpls v0.3.21 -->
-# project_vars 0.3.7
+<!-- THIS FILE IS EXCLUSIVELY MAINTAINED by the project aedev.aedev v0.3.32 -->
+<!-- THIS FILE IS EXCLUSIVELY MAINTAINED by the project aedev.namespace_root_tpls v0.3.27 -->
+# project_vars 0.3.8
 
 [![GitLab develop](https://img.shields.io/gitlab/pipeline/aedev-group/aedev_project_vars/develop?logo=python)](
     https://gitlab.com/aedev-group/aedev_project_vars)
 [![LatestPyPIrelease](
-    https://img.shields.io/gitlab/pipeline/aedev-group/aedev_project_vars/release0.3.7?logo=python)](
-    https://gitlab.com/aedev-group/aedev_project_vars/-/tree/release0.3.7)
+    https://img.shields.io/gitlab/pipeline/aedev-group/aedev_project_vars/release0.3.8?logo=python)](
+    https://gitlab.com/aedev-group/aedev_project_vars/-/tree/release0.3.8)
 [![PyPIVersions](https://img.shields.io/pypi/v/aedev_project_vars)](
     https://pypi.org/project/aedev-project-vars/#history)
 
@@ -35,8 +35,8 @@
     https://pypi.org/project/aedev-project-vars/#files)
 
 
-## installation
 
+## installation
 
 execute the following command to install the
 aedev.project_vars module
@@ -69,7 +69,9 @@ https://gitlab.com/aedev-group/aedev_project_vars/-/blob/develop/CONTRIBUTING.rs
 
 ## namespace portion documentation
 
-information on the features and usage of this portion are available at
+the documentation of the source code of this portion is available at
 [ReadTheDocs](
 https://aedev.readthedocs.io/en/latest/_autosummary/aedev.project_vars.html
 "aedev_project_vars documentation").
+
+
