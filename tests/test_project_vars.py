@@ -340,11 +340,23 @@ class TestHelpers:
         write_file(os_path_join(root_path, 'module.py'), "", make_dirs=True)
         assert project_name_guess(root_path) == "module"
 
-        root_path = os_path_join(parent_path, 'mod_ule00comment')
+        root_path = os_path_join(parent_path, 'module_old')
+        write_file(os_path_join(root_path, 'module.py'), "", make_dirs=True)
+        assert project_name_guess(root_path) == "module"
+
+        root_path = os_path_join(parent_path, 'mod_ule90comment')
+        write_file(os_path_join(root_path, 'mod_ule.py'), "", make_dirs=True)
+        assert project_name_guess(root_path) == "mod_ule"
+
+        root_path = os_path_join(parent_path, 'mod_ule_bk_up')
         write_file(os_path_join(root_path, 'mod_ule.py'), "", make_dirs=True)
         assert project_name_guess(root_path) == "mod_ule"
 
         root_path = os_path_join(parent_path, 'package00comment')   # same structure like Django project
+        write_file(os_path_join(root_path, 'package', PY_INIT), "", make_dirs=True)
+        assert project_name_guess(root_path) == "package"
+
+        root_path = os_path_join(parent_path, 'package_backup')
         write_file(os_path_join(root_path, 'package', PY_INIT), "", make_dirs=True)
         assert project_name_guess(root_path) == "package"
 
@@ -360,12 +372,20 @@ class TestHelpers:
         write_file(os_path_join(root_path, 'namespace', 'mod_ule.py'), "", make_dirs=True)
         assert project_name_guess(root_path) == "namespace_mod_ule"
 
+        root_path = os_path_join(parent_path, 'namespace_mod_ule_back_up')
+        write_file(os_path_join(root_path, 'namespace', 'mod_ule.py'), "", make_dirs=True)
+        assert project_name_guess(root_path) == "namespace_mod_ule"
+
         root_path = os_path_join(parent_path, 'namespace_package00comment')
-        write_file(os_path_join(root_path, 'namespace', 'package.py'), "", make_dirs=True)
+        write_file(os_path_join(root_path, 'namespace', 'package', PY_INIT), "", make_dirs=True)
         assert project_name_guess(root_path) == "namespace_package"
 
         root_path = os_path_join(parent_path, 'namespace_pack_age00comment')
-        write_file(os_path_join(root_path, 'namespace', 'pack_age.py'), "", make_dirs=True)
+        write_file(os_path_join(root_path, 'namespace', 'pack_age', PY_INIT), "", make_dirs=True)
+        assert project_name_guess(root_path) == "namespace_pack_age"
+
+        root_path = os_path_join(parent_path, 'namespace_pack_age_older_backup')
+        write_file(os_path_join(root_path, 'namespace', 'pack_age', PY_INIT), "", make_dirs=True)
         assert project_name_guess(root_path) == "namespace_pack_age"
 
         root_path = os_path_join(parent_path, 'app_name00comment')

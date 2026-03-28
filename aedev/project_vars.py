@@ -177,7 +177,7 @@ from aedev.commands import (                                                    
     editable_project_root_path, in_prj_dir_venv, git_remote_domain_group, git_remotes, git_tag_list)
 
 
-__version__ = '0.3.8'
+__version__ = '0.3.9'
 
 
 # PDV_* constants holding default values of all user/project specific configuration  ----------------------------------
@@ -402,13 +402,23 @@ def project_name_guess(project_path: str) -> str:
     project_name = os_path_basename(project_path)
     project_name = re.split(r"\d{2,}", project_name)[0]     # cut at old_version_idx (min. 2 digits)
 
-    parts = []
-    for part in project_name.split("_"):
-        parts.append(part)
-        prj_nam = "_".join(parts)
-        if os_path_isfile(os_path_join(project_path, prj_nam + PY_EXT)):        # module
+    all_parts = project_name.split("_")
+    namespace = all_parts[0]
+    first_parts = []
+    for part in all_parts:
+        first_parts.append(part)
+        prj_nam = "_".join(first_parts)
+        portion = "_".join(first_parts[1:])
+
+        if os_path_isfile(os_path_join(project_path, prj_nam + PY_EXT)):                    # module
             return prj_nam
-        if os_path_isfile(os_path_join(project_path, *parts, PY_INIT)):         # package|Django
+        if os_path_isfile(os_path_join(project_path, *first_parts[:-1], part + PY_EXT)):    # sub-module
+            return prj_nam
+        if os_path_isfile(os_path_join(project_path, namespace, portion + PY_EXT)):         # namespace module
+            return prj_nam
+        if os_path_isfile(os_path_join(project_path, *first_parts, PY_INIT)):               # package|Django
+            return prj_nam
+        if os_path_isfile(os_path_join(project_path, namespace, portion, PY_INIT)):         # namespace package
             return prj_nam
 
     return project_name
