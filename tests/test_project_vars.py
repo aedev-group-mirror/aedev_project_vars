@@ -323,12 +323,12 @@ class TestHelpers:
 
         assert values[tuple_var[len(ENV_VAR_NAME_PREFIX):]] == tuple_val
 
-    def test_project_name_guess_from_basename(self):
+    def test_project_name_guess_from_basename_without_existing_project_root(self):
         assert project_name_guess("") == ""
         assert project_name_guess("prj") == "prj"
         assert project_name_guess("/path/to/prj_root") == "prj_root"
 
-    def test_project_name_guess_from_old_backups(self):
+    def test_project_name_guess_from_old_backups_without_existing_project_root(self):
         assert project_name_guess("/path/to/prj_root00") == "prj_root"
         assert project_name_guess("/path/to/prj_root03comment") == "prj_root"
         assert project_name_guess("/path/to/prj_root06_comment") == "prj_root"
@@ -337,19 +337,23 @@ class TestHelpers:
         parent_path = os_path_join(str(tmp_path), DEF_PROJECT_PARENT_FOLDER)
 
         root_path = os_path_join(parent_path, 'module00comment')
-        write_file(os_path_join(root_path, 'module.py'), "", make_dirs=True)
+        write_file(os_path_join(root_path, 'module' + PY_EXT), "", make_dirs=True)
         assert project_name_guess(root_path) == "module"
 
+        root_path = os_path_join(parent_path, 'prj_name_with_2_digits_i18n')    # prj/module name containing two digits
+        write_file(os_path_join(root_path, 'prj_name_with_2_digits_i18n' + PY_EXT), "", make_dirs=True)
+        assert project_name_guess(root_path) == "prj_name_with_2_digits_i18n"
+
         root_path = os_path_join(parent_path, 'module_old')
-        write_file(os_path_join(root_path, 'module.py'), "", make_dirs=True)
+        write_file(os_path_join(root_path, 'module' + PY_EXT), "", make_dirs=True)
         assert project_name_guess(root_path) == "module"
 
         root_path = os_path_join(parent_path, 'mod_ule90comment')
-        write_file(os_path_join(root_path, 'mod_ule.py'), "", make_dirs=True)
+        write_file(os_path_join(root_path, 'mod_ule' + PY_EXT), "", make_dirs=True)
         assert project_name_guess(root_path) == "mod_ule"
 
         root_path = os_path_join(parent_path, 'mod_ule_bk_up')
-        write_file(os_path_join(root_path, 'mod_ule.py'), "", make_dirs=True)
+        write_file(os_path_join(root_path, 'mod_ule' + PY_EXT), "", make_dirs=True)
         assert project_name_guess(root_path) == "mod_ule"
 
         root_path = os_path_join(parent_path, 'package00comment')   # same structure like Django project
@@ -365,20 +369,24 @@ class TestHelpers:
         assert project_name_guess(root_path) == "pack_age"
 
         root_path = os_path_join(parent_path, 'namespace_module00comment')
-        write_file(os_path_join(root_path, 'namespace', 'module.py'), "", make_dirs=True)
+        write_file(os_path_join(root_path, 'namespace', 'module' + PY_EXT), "", make_dirs=True)
         assert project_name_guess(root_path) == "namespace_module"
 
         root_path = os_path_join(parent_path, 'namespace_mod_ule00comment')
-        write_file(os_path_join(root_path, 'namespace', 'mod_ule.py'), "", make_dirs=True)
+        write_file(os_path_join(root_path, 'namespace', 'mod_ule' + PY_EXT), "", make_dirs=True)
         assert project_name_guess(root_path) == "namespace_mod_ule"
 
         root_path = os_path_join(parent_path, 'namespace_mod_ule_back_up')
-        write_file(os_path_join(root_path, 'namespace', 'mod_ule.py'), "", make_dirs=True)
+        write_file(os_path_join(root_path, 'namespace', 'mod_ule' + PY_EXT), "", make_dirs=True)
         assert project_name_guess(root_path) == "namespace_mod_ule"
 
         root_path = os_path_join(parent_path, 'namespace_package00comment')
         write_file(os_path_join(root_path, 'namespace', 'package', PY_INIT), "", make_dirs=True)
         assert project_name_guess(root_path) == "namespace_package"
+
+        root_path = os_path_join(parent_path, 'namespace_i18n')  # special case with two digits in project name
+        write_file(os_path_join(root_path, 'namespace', 'i18n', PY_INIT), "", make_dirs=True)
+        assert project_name_guess(root_path) == "namespace_i18n"
 
         root_path = os_path_join(parent_path, 'namespace_pack_age00comment')
         write_file(os_path_join(root_path, 'namespace', 'pack_age', PY_INIT), "", make_dirs=True)
@@ -389,7 +397,7 @@ class TestHelpers:
         assert project_name_guess(root_path) == "namespace_pack_age"
 
         root_path = os_path_join(parent_path, 'app_name00comment')
-        write_file(os_path_join(root_path, 'main.py'), "", make_dirs=True)
+        write_file(os_path_join(root_path, 'main' + PY_EXT), "", make_dirs=True)
         assert project_name_guess(root_path) == "app_name"
 
     def test_project_owner_name_version(self):
@@ -1084,7 +1092,7 @@ class TestProjectDevVars:
             dc.PDV_REQ_FILE_NAME = 'requirements.txt'  # reset aedev.project_vars-module-var-value for subsequent tests
 
     def test_module_var_patch_imported_in_other_module(self):
-        oth_mod = 'tst_other_module.py'
+        oth_mod = 'tst_other_module' + PY_EXT
         try:
             write_file(oth_mod, "import aedev.project_vars as dc")
             # noinspection PyUnresolvedReferences
@@ -1100,7 +1108,7 @@ class TestProjectDevVars:
             dc.PDV_REQ_FILE_NAME = 'requirements.txt'  # reset aedev.project_vars-module-var-value for subsequent tests
 
     def test_module_var_patch_imported_in_other_module_as(self):
-        oth_mod = 'another_tst_module.py'
+        oth_mod = 'another_tst_module' + PY_EXT
         try:
             write_file(oth_mod, "from aedev.project_vars import PDV_REQ_FILE_NAME")
             # noinspection PyUnresolvedReferences
