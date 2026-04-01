@@ -177,7 +177,7 @@ from aedev.commands import (                                                    
     editable_project_root_path, in_prj_dir_venv, git_remote_domain_group, git_remotes, git_tag_list)
 
 
-__version__ = '0.3.9'
+__version__ = '0.3.10'
 
 
 # PDV_* constants holding default values of all user/project specific configuration  ----------------------------------
@@ -393,16 +393,17 @@ def pdv_env_values() -> dict[str, Any]:
     return values
 
 
-def project_name_guess(project_path: str) -> str:
+def project_name_guess(project_path: str, stripped_name: str = "") -> str:
     """ guess name of project name from project root directory path (also for backups under old_src parent directory).
 
-    :param project_path:        absolute/normalized project root directory path.
+    :param project_path:        project root directory path.
+    :param stripped_name:       optional stripped project name (w/o any old-project-backup-idx-number+comments suffix).
     :return:                    guessed project name.
     """
-    project_name = os_path_basename(project_path)
-    project_name = re.split(r"\d{2,}", project_name)[0]     # cut at old_version_idx (min. 2 digits)
+    if not stripped_name:
+        stripped_name = os_path_basename(project_path)
 
-    all_parts = project_name.split("_")
+    all_parts = stripped_name.split("_")
     namespace = all_parts[0]
     first_parts = []
     for part in all_parts:
@@ -421,7 +422,11 @@ def project_name_guess(project_path: str) -> str:
         if os_path_isfile(os_path_join(project_path, namespace, portion, PY_INIT)):         # namespace package
             return prj_nam
 
-    return project_name
+    stripped_name, *comments = re.split(r"\d{2,}", stripped_name)   # not found, so strip min.-2-digits-old-version-idx
+    if comments:                                                    # if old-version-idx found: recursively do 2nd try
+        stripped_name = project_name_guess(project_path, stripped_name=stripped_name)
+
+    return stripped_name
 
 
 def project_owner_name_version(project_string: str,

@@ -1,12 +1,12 @@
 <!-- THIS FILE IS EXCLUSIVELY MAINTAINED by the project aedev.aedev v0.3.32 -->
 <!-- THIS FILE IS EXCLUSIVELY MAINTAINED by the project aedev.namespace_root_tpls v0.3.27 -->
-# project_vars 0.3.9
+# project_vars 0.3.10
 
 [![GitLab develop](https://img.shields.io/gitlab/pipeline/aedev-group/aedev_project_vars/develop?logo=python)](
     https://gitlab.com/aedev-group/aedev_project_vars)
 [![LatestPyPIrelease](
-    https://img.shields.io/gitlab/pipeline/aedev-group/aedev_project_vars/release0.3.9?logo=python)](
-    https://gitlab.com/aedev-group/aedev_project_vars/-/tree/release0.3.9)
+    https://img.shields.io/gitlab/pipeline/aedev-group/aedev_project_vars/release0.3.10?logo=python)](
+    https://gitlab.com/aedev-group/aedev_project_vars/-/tree/release0.3.10)
 [![PyPIVersions](https://img.shields.io/pypi/v/aedev_project_vars)](
     https://pypi.org/project/aedev-project-vars/#history)
 
