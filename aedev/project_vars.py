@@ -78,7 +78,7 @@ key methods of a ProjectDevVars instance
 project introspection helpers and constants
 -------------------------------------------
 
-these standalone functions provide utilities for inspecting python source code files and project environments.
+these standalone functions provide utilities for inspecting Python source code files and project environments.
 
 * :func:`editable_project_root_path`: determines the project path of a package installed in an editable mode
 (e.g., via `pip install -e`).
@@ -166,7 +166,7 @@ from ae.managed_files import (                             # type: ignore # noqa
     TEMPLATE_INCLUDE_FILE_PLACEHOLDER_ID, TEMPLATE_REPLACE_WITH_PLACEHOLDER_ID)
 from aedev.base import (                                                                                # type: ignore
     ALL_PRJ_TYPES, ANY_PRJ_TYPE, APP_PRJ, COMMIT_MSG_FILE_NAME, DEF_MAIN_BRANCH,
-    DJANGO_PRJ, MODULE_PRJ, NO_PRJ, PACKAGE_PRJ, PARENT_PRJ, PLAYGROUND_PRJ,
+    DJANGO_PRJ, MODULE_PRJ, NO_PRJ, PACKAGE_NAME_SEPS, PACKAGE_PRJ, PARENT_PRJ, PLAYGROUND_PRJ,
     PROJECT_VERSION_SEP, PYPI_ROOT_URL, PYPI_ROOT_URL_TEST, ROOT_PRJ, TEST_PROJECTS_PARENT_FOLDER,
     VERSION_MATCHER, VERSION_PREFIX, VERSION_QUOTE,
     TemplateProjectsType,
@@ -177,7 +177,7 @@ from aedev.commands import (                                                    
     editable_project_root_path, in_prj_dir_venv, git_remote_domain_group, git_remotes, git_tag_list)
 
 
-__version__ = '0.3.10'
+__version__ = '0.3.11'
 
 
 # PDV_* constants holding default values of all user/project specific configuration  ----------------------------------
@@ -448,8 +448,8 @@ def project_owner_name_version(project_string: str,
         project, version = prj_ver.split(PROJECT_VERSION_SEP, maxsplit=1)
     else:
         project, version = prj_ver, version_default
-    if namespace_default and not project.startswith(prefix := namespace_default + '_'):
-        project = prefix + project
+    if namespace_default and not project.startswith(tuple(namespace_default + _ for _ in PACKAGE_NAME_SEPS)):
+        project = namespace_default + PACKAGE_NAME_SEPS[0] + project
     return owner, project, version
 
 
@@ -476,8 +476,8 @@ def replace_file_version(file_name: str, version: str = "", increment_part: int 
     if version:
         _replacement = VERSION_PREFIX + increment_version(version, increment_part=increment_part) + VERSION_QUOTE
     else:
-        def _replacement(_match: re.Match) -> str:
-            return VERSION_PREFIX + increment_version((_match.group(p) for p in range(1, 4)),
+        def _replacement(_match: re.Match[str]) -> str:
+            return VERSION_PREFIX + increment_version(tuple(_match.group(p) for p in range(1, 4)),
                                                       increment_part=increment_part) + VERSION_QUOTE
     content, replaced = VERSION_MATCHER.subn(_replacement, content)
 
@@ -594,7 +594,7 @@ class ProjectDevVars(dict[str, PdvVarValType]):
             namespace_len = len(namespace_name)
 
             imp_names = []
-            por_vars: ChildrenType = OrderedDict()
+            por_vars = OrderedDict()        # por_vars: ChildrenType
             pypi_refs_rst = []
             pypi_refs_md = []
             pypi_test = self['parent_folder'] == TEST_PROJECTS_PARENT_FOLDER
@@ -801,7 +801,7 @@ class ProjectDevVars(dict[str, PdvVarValType]):
                     self[var_name] = domain
 
                 # use PDV_repo_domain-default to preference/detect domain-specific user-/group-names in local .env files
-                domain = self[var_name] or env_values.get(var_name, "") or is_repo_var and PDV_repo_domain or ""
+                domain = self[var_name] or env_values.get(var_name, "") or (PDV_repo_domain if is_repo_var else "")
                 user = get_domain_user_var(var_name, domain=domain) or env_values.get(f'{var_prefix}user', "")
                 var_name = f'{var_prefix}user'
                 if var_name not in self and user:
@@ -857,7 +857,7 @@ class ProjectDevVars(dict[str, PdvVarValType]):
         if 'package_data' not in self:
             self['package_data'] = self._find_package_data()
         if 'pip_name' not in self and project_type in ANY_PRJ_TYPE:
-            self['pip_name'] = project_name.replace('_', '-')
+            self['pip_name'] = project_name.translate(str.maketrans("".join(_s := PACKAGE_NAME_SEPS), '-' * len(_s)))
         if 'project_packages' not in self:
             if namespace_name:
                 include = [namespace_name + (".*" if project_type in (PACKAGE_PRJ, ROOT_PRJ) else "")]
@@ -891,7 +891,7 @@ class ProjectDevVars(dict[str, PdvVarValType]):
             project_type = APP_PRJ                                  # kivy-app if self['BUILD_CONFIG_FILE'] in prj root
         elif os_path_isfile(os_path_join(project_path, 'manage.py')):
             project_type = DJANGO_PRJ
-        elif project_name == namespace_name + '_' + namespace_name:
+        elif project_name == namespace_name + PACKAGE_NAME_SEPS[0] + namespace_name:
             project_type = ROOT_PRJ
         elif os_path_basename(version_file) == PY_INIT:
             project_type = PACKAGE_PRJ
@@ -932,7 +932,7 @@ class ProjectDevVars(dict[str, PdvVarValType]):
             req_file = frozen_req_file_path(req_file)
             if os_path_isfile(req_file):
                 packages.extend(line.strip().split(' ')[0]      # remove options, keep version number
-                                for line in read_file(req_file).split('\n')
+                                for line in read_file(req_file).splitlines()
                                 if line.strip()                 # exclude empty lines
                                 and not line.startswith('#')    # exclude comments
                                 and not line.startswith('-')    # exclude -r/-e <req_file> lines
@@ -949,9 +949,10 @@ class ProjectDevVars(dict[str, PdvVarValType]):
         dev_requires = self.pdv_val('dev_requires')
 
         if 'portions_packages' not in self:
+            prefixes = tuple(namespace_name + _ for _ in PACKAGE_NAME_SEPS)
             self['portions_packages'] = [   # excluding self-reference of its own template/root package, e.g. to prevent
                 _ for _ in dev_requires     # endless recursion in _compile_dev_vars() for namespace root packages
-                if _.startswith(f'{namespace_name}_') and project_name != _.split(PROJECT_VERSION_SEP)[0]]
+                if _.startswith(prefixes) and project_name.lower() != _.split(PROJECT_VERSION_SEP)[0].lower()]
         if 'docs_requires' not in self:
             self['docs_requires'] = _package_list(os_path_join(project_path, self['DOCS_FOLDER'], req_file_name))
         if 'install_requires' not in self:
