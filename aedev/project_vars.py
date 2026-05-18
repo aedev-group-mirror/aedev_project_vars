@@ -87,7 +87,6 @@ excluding templates and `__init__.py` files.
 * :func:`increment_version`: increments a semantic version string (e.g., major, minor, or patch part).
 * :func:`latest_remote_version` – determine the latest or next available version tag from git remotes.
 * :func:`main_file_path` – compute the expected main/version file path for a project type.
-* :func:`namespace_guess`: determines and returns the optional namespace name of a python package.
 * :func:`pdv_default_values` – collect default pdv values from module globals.
 * :func:`pdv_env_values` – load pdv values from environment variables.
 * :func:`project_owner_name_version` – split a project string into owner, name, and version.
@@ -99,7 +98,7 @@ excluding templates and `__init__.py` files.
 project development variable value constants
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-  * :data:`PDV_BUILD_CONFIG_FILE`: the name of the application building configuration file (e.g., `buildozer.spec`).
+  * :data:`PDV_APP_BUILD_CFG_FILENAME`: the name of the application building configuration file (e.g. `buildozer.spec`).
   * :data:`PDV_COMMIT_MSG_FILE_NAME`: the default file name for a git commit message.
   * :data:`PDV_DOCS_FOLDER`: the default folder name for documentation (e.g., `docs`).
   * :data:`PDV_DOCS_HOST_PROTOCOL`: the default protocol for the documentation host (e.g., `https://`).
@@ -153,11 +152,12 @@ from packaging.version import Version
 from setuptools import find_namespace_packages, find_packages
 
 from ae.base import (                                                                                   # type: ignore
-    BUILD_CONFIG_FILE, DEF_PROJECT_PARENT_FOLDER, DOCS_FOLDER, PACKAGE_INCLUDE_FILES_PREFIX, PY_EXT, PY_INIT,
-    TEMPLATES_FOLDER, TESTS_FOLDER,
-    deep_dict_update, evaluate_literal, main_file_paths_parts, norm_path,
+    DEF_PROJECT_PARENT_FOLDER, DOCS_FOLDER, PACKAGE_INCLUDE_FILES_PREFIX, PY_EXT, PY_INIT, TEMPLATES_FOLDER,
+    TESTS_FOLDER,
+    deep_dict_update, evaluate_literal, norm_path,
     os_path_abspath, os_path_join, os_path_isfile, os_path_dirname, os_path_basename, os_path_isdir, os_path_relpath,
-    os_path_sep, os_path_splitext, project_main_file, read_file, write_file)
+    os_path_sep, os_path_splitext, read_file, write_file)
+from ae.system import APP_BUILD_CFG_FILENAME, MODULE_NAME_SEPS, project_main_file, PyMo                 # type: ignore
 from ae.paths import coll_folders, path_files, path_items, skip_py_cache_files, Collector               # type: ignore
 from ae.core import debug_out                                                                           # type: ignore
 from ae.shell import get_domain_user_var                                                                # type: ignore
@@ -166,7 +166,7 @@ from ae.managed_files import (                             # type: ignore # noqa
     TEMPLATE_INCLUDE_FILE_PLACEHOLDER_ID, TEMPLATE_REPLACE_WITH_PLACEHOLDER_ID)
 from aedev.base import (                                                                                # type: ignore
     ALL_PRJ_TYPES, ANY_PRJ_TYPE, APP_PRJ, COMMIT_MSG_FILE_NAME, DEF_MAIN_BRANCH,
-    DJANGO_PRJ, MODULE_PRJ, NO_PRJ, PACKAGE_NAME_SEPS, PACKAGE_PRJ, PARENT_PRJ, PLAYGROUND_PRJ,
+    DJANGO_PRJ, MODULE_PRJ, NO_PRJ, PACKAGE_PRJ, PARENT_PRJ, PLAYGROUND_PRJ,
     PROJECT_VERSION_SEP, PYPI_ROOT_URL, PYPI_ROOT_URL_TEST, ROOT_PRJ, TEST_PROJECTS_PARENT_FOLDER,
     VERSION_MATCHER, VERSION_PREFIX, VERSION_QUOTE,
     TemplateProjectsType,
@@ -177,7 +177,7 @@ from aedev.commands import (                                                    
     editable_project_root_path, in_prj_dir_venv, git_remote_domain_group, git_remotes, git_tag_list)
 
 
-__version__ = '0.3.11'
+__version__ = '0.3.12'
 
 
 # PDV_* constants holding default values of all user/project specific configuration  ----------------------------------
@@ -185,7 +185,7 @@ __version__ = '0.3.11'
 ENV_VAR_NAME_PREFIX = 'PDV_'            #: used for env var names and the constant names declared in this module
 
 PDV_COMMIT_MSG_FILE_NAME = COMMIT_MSG_FILE_NAME         #: name of the git commit message file
-PDV_BUILD_CONFIG_FILE = BUILD_CONFIG_FILE               #: app building config file
+PDV_APP_BUILD_CFG_FILENAME = APP_BUILD_CFG_FILENAME     #: app building config file
 PDV_DOCS_FOLDER = DOCS_FOLDER                           #: docs folder name
 PDV_DOCS_HOST_PROTOCOL = "https://"                     #: documentation host connection protocol
 # pylint: disable-next=invalid-name
@@ -284,9 +284,9 @@ def increment_version(version: Union[str, Iterable[str]], increment_part: int = 
     :return:                    incremented version number.
     """
     if isinstance(version, str):
-        version = version.split(".")
+        version = version.split('.')
 
-    return ".".join(str(int(part_str) + 1) if part_idx + 1 == increment_part else part_str
+    return '.'.join(str(int(part_str) + 1) if part_idx + 1 == increment_part else part_str
                     for part_idx, part_str in enumerate(version))
 
 
@@ -322,7 +322,7 @@ def main_file_path(project_path: str, project_type: str, namespace_name: str = "
     :return:                    main file path and name.
 
     .. note::
-        in contrary to :func:`~ae.base.project_main_file` this function will also work for new projects where neither
+        in contrary to :func:`~ae.system.project_main_file` this function will also work for new projects where neither
         exists the main file nor the project root folder.
     """
     main_path = norm_path(project_path)
@@ -340,26 +340,6 @@ def main_file_path(project_path: str, project_type: str, namespace_name: str = "
         main_name = main_stem + PY_EXT
 
     return os_path_join(main_path, main_name)
-
-
-def namespace_guess(project_path: str) -> str:
-    """ guess name of namespace name from the package/app/project root directory path.
-
-    :param project_path:        path to project root folder.
-    :return:                    namespace import name of the project specified via the project root directory path.
-    """
-    project_name = portion_name = os_path_basename(norm_path(project_path))
-    namespace_name = ""
-    for part in project_name.split("_"):
-        for path_parts in main_file_paths_parts(portion_name):
-            if os_path_isfile(os_path_join(project_path, *path_parts)):
-                return namespace_name[1:]
-
-        project_path = os_path_join(project_path, part)
-        *_ns_path_parts, portion_name = portion_name.split("_", maxsplit=1)
-        namespace_name += "." + part
-
-    return ""
 
 
 def pdv_default_values() -> dict[str, Any]:
@@ -396,12 +376,12 @@ def pdv_env_values() -> dict[str, Any]:
 def project_name_guess(project_path: str, stripped_name: str = "") -> str:
     """ guess name of project name from project root directory path (also for backups under old_src parent directory).
 
-    :param project_path:        project root directory path.
+    :param project_path:        project root directory path (absolute or relative to the current working directory).
     :param stripped_name:       optional stripped project name (w/o any old-project-backup-idx-number+comments suffix).
     :return:                    guessed project name.
     """
     if not stripped_name:
-        stripped_name = os_path_basename(project_path)
+        stripped_name = os_path_basename(norm_path(project_path))
 
     all_parts = stripped_name.split("_")
     namespace = all_parts[0]
@@ -448,8 +428,8 @@ def project_owner_name_version(project_string: str,
         project, version = prj_ver.split(PROJECT_VERSION_SEP, maxsplit=1)
     else:
         project, version = prj_ver, version_default
-    if namespace_default and not project.startswith(tuple(namespace_default + _ for _ in PACKAGE_NAME_SEPS)):
-        project = namespace_default + PACKAGE_NAME_SEPS[0] + project
+    if namespace_default and not project.startswith(tuple(namespace_default + _ for _ in MODULE_NAME_SEPS)):
+        project = namespace_default + '_' + project
     return owner, project, version
 
 
@@ -499,10 +479,10 @@ def root_packages_masks(project_packages: Iterable[str]) -> list[str]:
     root_packages = []
     root_paths = []
     for app_import_name in sorted(project_packages):
-        pkg_name_parts = app_import_name.split('.')
-        if pkg_name_parts[0] not in root_packages:
-            root_packages.append(pkg_name_parts[0])
-            root_paths.append(os_path_join(pkg_name_parts[0], '**', '*'))
+        pkg_name_root_part, *_rest = app_import_name.split('.', maxsplit=1)
+        if pkg_name_root_part not in root_packages:
+            root_packages.append(pkg_name_root_part)
+            root_paths.append(os_path_join(pkg_name_root_part, '**', '*'))
     return root_paths
 
 
@@ -538,11 +518,11 @@ class ProjectDevVars(dict[str, PdvVarValType]):
         :param var_values:          fixed dev var values, overwriting OS environment variables and defaults.
                                     to get the project dev variable values from an existing project pass the
                                     `project_path` kwarg with the path of the project root folder.
-                                    the project path defaults to the current working directory, if the kwargs
+                                    the project root path defaults to the current working directory, if the kwargs
                                     `project_path` and `project_name` are not specified; if only `project_name`
                                     is specified then it defaults to the folder with the project name situated
                                     underneath the current working directory.
-        :raises:                    AssertionError if `project_path` and `project_name` are specified.
+        :raises:                    AssertionError if both kwargs `project_path` and `project_name` are specified.
         :return:                    special mapping with all the determinable project development variable values.
         """
         assert 'project_path' not in var_values or 'project_name' not in var_values, \
@@ -573,12 +553,9 @@ class ProjectDevVars(dict[str, PdvVarValType]):
             warnings.warn(f" ***  value of '{var_name=}' is not of type str (got {type(value)}). use pdv_val() method!")
         return value
 
-    def _compile_dev_vars(self):        # pylint: disable=too-many-locals
+    def _compile_dev_vars(self):
         namespace_name = self['namespace_name']
-        project_path = self['project_path']
         project_type = self['project_type']
-        sep = os.linesep
-        ins = sep + " " * 4
 
         self['project_id'] = '_'.join(self[_] for _ in ('repo_domain', 'repo_group', 'project_name', 'project_version'))
         self['project_title'] = (
@@ -586,60 +563,65 @@ class ProjectDevVars(dict[str, PdvVarValType]):
             if namespace_name else
             " ".join(self[_] for _ in ('project_name', 'project_type', 'project_version')))
 
-        chi_app_options = {}
-        if project_type in (PARENT_PRJ, ROOT_PRJ) and 'main_app_options' in self:
-            chi_app_options = {_name: _value for _name, _value in self.pdv_val('main_app_options').items()
-                               if _name not in ('project_name', 'project_path')}
         if project_type == ROOT_PRJ:
-            namespace_len = len(namespace_name)
-
-            imp_names = []
-            por_vars = OrderedDict()        # por_vars: ChildrenType
-            pypi_refs_rst = []
-            pypi_refs_md = []
-            pypi_test = self['parent_folder'] == TEST_PROJECTS_PARENT_FOLDER
-            for project_nam_ver in cast(list[str], self.pdv_val('portions_packages')):
-                p_name = project_nam_ver.split(PROJECT_VERSION_SEP)[0]
-                portion_path = os_path_join(os_path_dirname(project_path), p_name)
-                portion_name = p_name[namespace_len + 1:]
-                import_name = p_name[:namespace_len] + '.' + portion_name
-
-                pypi_url = (PYPI_ROOT_URL_TEST if pypi_test else PYPI_ROOT_URL) + f"/project/{p_name}"
-                pypi_refs_rst.append(f'* `{p_name} <{pypi_url}>`_')
-                pypi_refs_md.append(f'* [{p_name}]({pypi_url} "{namespace_name} namespace portion {p_name}")')
-
-                por_vars[p_name] = chi_pdv = ProjectDevVars(
-                    project_path=portion_path, namespace_name=namespace_name, main_app_options=chi_app_options)
-
-                imp_names.append(import_name)
-                assert chi_pdv['package_path'] == os_path_join(portion_path, namespace_name, portion_name), \
-                    f"{chi_pdv['package_path']=} != {os_path_join(portion_path, namespace_name, portion_name)=}"
-                for e_mod in find_extra_modules(chi_pdv['package_path'], chi_pdv['TEMPLATES_FOLDER']):
-                    imp_names.append(import_name + '.' + e_mod)
-
-            self['children_project_vars'] = por_vars
-
-            self['portions_pypi_refs'] = sep.join(pypi_refs_rst)  # templates/..._README.rst
-            self['portions_pypi_refs_md'] = sep.join(pypi_refs_md)  # templates/..._README.md
-            self['portions_import_names'] = ins.join(imp_names)  # templates/docs/..._index.rst
+            self._compile_namespace_children()
 
         elif project_type == PARENT_PRJ:
             coll = Collector(item_collector=coll_folders)
-            coll.collect(project_path, select="*")
+            coll.collect(self['project_path'], select="*")
             self['children_project_vars'] = {
-                os_path_basename(chi_prj_path): ProjectDevVars(project_path=chi_prj_path, **chi_app_options)
+                os_path_basename(chi_prj_path): ProjectDevVars(project_path=chi_prj_path, **self.children_app_options())
                 for chi_prj_path in coll.paths}
 
         docs_dir = os_path_join(self['project_path'], self['DOCS_FOLDER'])
         extra_docs = path_files(os_path_join(docs_dir, 'man', "**", "*.rst"))
         self['manuals_include'] = ""    # needed by index.rst template (namespace_root_tpls/de_otf_de_tpl_index.rst)
         if extra_docs:
+            sep = os.linesep
+            ins = sep + " " * 4
             self['manuals_include'] = f"manuals and tutorials{sep}" \
                                       f"*********************{sep}{sep}" \
                                       f".. toctree::{sep}{sep}" \
                                       f"    {ins.join(os_path_relpath(_, docs_dir) for _ in extra_docs)}"
 
         return self
+
+    def _compile_namespace_children(self):
+        namespace_name = self['namespace_name']
+
+        imp_names = []
+        por_vars = OrderedDict()                                    # por_vars: ChildrenType
+        pypi_refs_rst = []
+        pypi_refs_md = []
+        url_prefix = (PYPI_ROOT_URL_TEST if self['parent_folder'] == TEST_PROJECTS_PARENT_FOLDER else PYPI_ROOT_URL
+                      ) + "/project/"
+        chi_app_options = self.children_app_options()
+        for project_nam_ver in cast(list[str], self.pdv_val('portions_packages')):
+            p_name = project_nam_ver.split(PROJECT_VERSION_SEP)[0]
+
+            pypi_refs_rst.append(f'* `{p_name} <{url_prefix}{p_name}>`_')
+            pypi_refs_md.append(f'* [{p_name}]({url_prefix}{p_name} "{namespace_name} namespace portion {p_name}")')
+
+            por_vars[p_name] = chi_pdv = ProjectDevVars(
+                project_path=os_path_join(os_path_dirname(self['project_path']), p_name),
+                namespace_name=namespace_name,
+                main_app_options=chi_app_options)
+
+            imp_names.append(chi_pdv['import_name'])
+            for e_mod in find_extra_modules(chi_pdv['package_path'], chi_pdv['TEMPLATES_FOLDER']):
+                imp_names.append(chi_pdv['import_name'] + '.' + e_mod)
+
+            assert chi_pdv['package_path'] == os_path_join(
+                os_path_dirname(self['project_path']), p_name, namespace_name, chi_pdv['portion_name']), \
+                f"{chi_pdv['package_path']=} != {os_path_join(
+                    os_path_dirname(self['project_path']), p_name, namespace_name, chi_pdv['portion_name'])=}"
+
+        self['children_project_vars'] = por_vars
+
+        sep = os.linesep
+        self['portions_pypi_refs'] = sep.join(pypi_refs_rst)                    # templates/..._README.rst
+        self['portions_pypi_refs_md'] = sep.join(pypi_refs_md)                  # templates/..._README.md
+        self['portions_import_names'] = (sep + " " * 4).join(imp_names)         # templates/docs/..._index.rst
 
     def _compile_remote_vars(self):
         project_name = self['project_name']
@@ -736,7 +718,7 @@ class ProjectDevVars(dict[str, PdvVarValType]):
                                 leading underscore (like e.g. the docs `_build`, the
                                 :data:`~ae.base.PY_CACHE_FOLDER`|`__pycache__` and the `__enamlcache__` folders) get
                                 excluded.
-                                explicitly included will be any :data:`PDV_BUILD_CONFIG_FILE` file, as well as any
+                                explicitly included will be any :data:`PDV_APP_BUILD_CFG_FILENAME` file, as well as any
                                 folder name starting with :data:`~ae.base.PACKAGE_INCLUDE_FILES_PREFIX` (used e.g. by
                                 :mod:`ae.updater`), situated directly in the directory specified by
                                 :paramref:`~_find_package_data.package_path`.
@@ -750,7 +732,7 @@ class ProjectDevVars(dict[str, PdvVarValType]):
                 if not any(_.startswith("_") for _ in rel_path.split(os_path_sep)):
                     files.append(rel_path)
 
-        _add_file(os_path_join(package_path, self['BUILD_CONFIG_FILE']))
+        _add_file(os_path_join(package_path, self['APP_BUILD_CFG_FILENAME']))
 
         # included folders situated in the project root folder, used e.g. by the optional ae.updater module
         for file in glob.glob(os_path_join(package_path, PACKAGE_INCLUDE_FILES_PREFIX + "*")):
@@ -821,9 +803,16 @@ class ProjectDevVars(dict[str, PdvVarValType]):
         self.update(var_values)
 
         project_path = self['project_path'] = norm_path(self['project_path'] or self['project_name'])
+
         if not self['project_name']:
             self['project_name'] = project_name_guess(project_path)
         project_name = self['project_name']
+        if 'import_name' in self:
+            py_mo = PyMo(self['import_name'], project_path=project_path)
+        else:
+            py_mo = PyMo.from_path(project_path, namespace_name=self['namespace_name'])
+            self['import_name'] = py_mo.import_name
+        import_name = self['import_name']
         self['parent_folder'] = os_path_basename(os_path_dirname(project_path))
         if 'remote_urls' not in self:
             self['remote_urls'] = git_remotes(project_path)  # early cache for _init_from_env/git_remote_domain_group()
@@ -832,16 +821,16 @@ class ProjectDevVars(dict[str, PdvVarValType]):
 
         self.update({k: v for k, v in pdv_default_values().items() if k not in self})
 
-        if not self['namespace_name']:
-            self['namespace_name'] = namespace_guess(project_path)
+        if not self['namespace_name'] and (namespace_name := PyMo(import_name).namespace_name):
+            py_mo = PyMo.from_path(project_path, namespace_name=namespace_name)
+            self['namespace_name'] = namespace_name
         namespace_name = self['namespace_name']
+
         if 'portion_name' not in self:
-            self['portion_name'] = project_name[len(namespace_name) + 1:] if namespace_name else ""
+            self['portion_name'] = py_mo.portion_name if namespace_name else ""
         portion_name = self['portion_name']
-        if 'import_name' not in self:
-            self['import_name'] = f"{namespace_name}.{portion_name}" if namespace_name else project_name
         if 'version_file' not in self:  # needed by _init_project_type(), so use main_file_path() on given project_type
-            file_path = project_main_file(self['import_name'], project_path=project_path)
+            file_path = project_main_file(import_name, project_path=project_path)
             if not file_path and self['project_type']:
                 file_path = main_file_path(project_path, self['project_type'], namespace_name=namespace_name)
             self['version_file'] = file_path
@@ -852,12 +841,17 @@ class ProjectDevVars(dict[str, PdvVarValType]):
 
         if 'project_version' not in self:
             self['project_version'] = code_file_version(version_file)
-        if 'package_path' not in self:
-            self['package_path'] = os_path_join(project_path, *namespace_name.split("."), portion_name)
+        if 'package_path' not in self:  # prj-root for PRJ_APP, namespace/portion-dir for namespace-PRJ_PACKAGE
+            # `py_mo.package_dir_path` is relative&wrong e.g. for PRJ_APP because has extra prj_/package_name sub-folder
+            # `os_path_join(project_path, *namespace_name.split("."), portion_name)` does not work for non-namespace-pkg
+            if project_type == PACKAGE_PRJ and namespace_name == "":
+                self['package_path'] = os_path_join(project_path, project_name)
+            else:
+                self['package_path'] = os_path_join(project_path, *namespace_name.split("."), portion_name)
         if 'package_data' not in self:
             self['package_data'] = self._find_package_data()
         if 'pip_name' not in self and project_type in ANY_PRJ_TYPE:
-            self['pip_name'] = project_name.translate(str.maketrans("".join(_s := PACKAGE_NAME_SEPS), '-' * len(_s)))
+            self['pip_name'] = py_mo.pip_name
         if 'project_packages' not in self:
             if namespace_name:
                 include = [namespace_name + (".*" if project_type in (PACKAGE_PRJ, ROOT_PRJ) else "")]
@@ -888,10 +882,10 @@ class ProjectDevVars(dict[str, PdvVarValType]):
         if project_name.endswith('_playground'):                    # could have a 'main' + PY_EXT file in project root
             project_type = PLAYGROUND_PRJ
         elif os_path_isfile(os_path_join(project_path, namespace_name, 'main' + PY_EXT)):
-            project_type = APP_PRJ                                  # kivy-app if self['BUILD_CONFIG_FILE'] in prj root
+            project_type = APP_PRJ                                  # kivy-app if APP_BUILD_CFG_FILENAME in prj root
         elif os_path_isfile(os_path_join(project_path, 'manage.py')):
             project_type = DJANGO_PRJ
-        elif project_name == namespace_name + PACKAGE_NAME_SEPS[0] + namespace_name:
+        elif project_name == namespace_name + '_' + namespace_name:
             project_type = ROOT_PRJ
         elif os_path_basename(version_file) == PY_INIT:
             project_type = PACKAGE_PRJ
@@ -934,8 +928,8 @@ class ProjectDevVars(dict[str, PdvVarValType]):
                 packages.extend(line.strip().split(' ')[0]      # remove options, keep version number
                                 for line in read_file(req_file).splitlines()
                                 if line.strip()                 # exclude empty lines
-                                and not line.startswith('#')    # exclude comments
-                                and not line.startswith('-')    # exclude -r/-e <req_file> lines
+                                and not line.startswith("#")    # exclude comments
+                                and not line.startswith("-")    # exclude -r/-e <req_file> lines
                                 )
             return packages
 
@@ -949,7 +943,7 @@ class ProjectDevVars(dict[str, PdvVarValType]):
         dev_requires = self.pdv_val('dev_requires')
 
         if 'portions_packages' not in self:
-            prefixes = tuple(namespace_name + _ for _ in PACKAGE_NAME_SEPS)
+            prefixes = tuple(namespace_name + _ for _ in ('-', '_'))
             self['portions_packages'] = [   # excluding self-reference of its own template/root package, e.g. to prevent
                 _ for _ in dev_requires     # endless recursion in _compile_dev_vars() for namespace root packages
                 if _.startswith(prefixes) and project_name.lower() != _.split(PROJECT_VERSION_SEP)[0].lower()]
@@ -968,6 +962,17 @@ class ProjectDevVars(dict[str, PdvVarValType]):
         """ extract project development variable values as a dictionary. """
         return super().copy()
 
+    def children_app_options(self) -> dict[str, str]:
+        """ determine the main app options needed for to initialize its children w/o 'project_name' and 'project_path'.
+
+        :return:                dict with valid main app options for the children of this root/parent package/project.
+        """
+        chi_app_options = {}
+        if 'main_app_options' in self:
+            chi_app_options = {_name: _value for _name, _value in self.pdv_val('main_app_options').items()
+                               if _name not in ('project_name', 'project_path')}
+        return chi_app_options
+
     def copy(self) -> "ProjectDevVars":
         """ create a copy of this ProjectDevVars instance. """
         dict_data = super().copy()
@@ -985,8 +990,10 @@ class ProjectDevVars(dict[str, PdvVarValType]):
         warning_error = errors.append if warnings_as_error else warnings.warn
 
         if not self['AUTHOR']:
+            # noinspection PyArgumentList
             warning_error("author name is missing - specify via PDV_AUTHOR in OS environment/.env or config file")
         if not self['AUTHOR_EMAIL']:
+            # noinspection PyArgumentList
             warning_error("author email address is missing - specify via PDV_AUTHOR_EMAIL in OS environment/.env file")
 
         project_path = self['project_path']
@@ -1000,6 +1007,7 @@ class ProjectDevVars(dict[str, PdvVarValType]):
         parent_folders = self.pdv_val('PARENT_FOLDERS')
         parent_folder = os_path_basename(project_path) if project_type == PARENT_PRJ else self['parent_folder']
         if parent_folder not in parent_folders:
+            # noinspection PyArgumentList
             warning_error(f"parent folder name {parent_folder} not in {parent_folders=}; extend via PDV_PARENT_FOLDERS")
 
         if project_type not in (NO_PRJ, PARENT_PRJ) and project_name_guess(project_path) != self['project_name']:
