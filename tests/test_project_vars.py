@@ -14,7 +14,7 @@ from ae.base import (
     DEF_PROJECT_PARENT_FOLDER, DOCS_FOLDER, PACKAGE_INCLUDE_FILES_PREFIX,
     PY_CACHE_FOLDER, PY_EXT, PY_INIT, TEMPLATES_FOLDER, TESTS_FOLDER,
     in_wd, norm_path, os_path_basename, os_path_dirname, os_path_isdir, os_path_isfile, os_path_join, os_path_relpath,
-    os_path_splitext, read_file, write_file)
+    os_path_splitext, read_file, write_bin_file, write_file)
 from ae.system import APP_BUILD_CFG_FILENAME
 from ae.managed_files import TEMPLATE_PLACEHOLDER_ID_PREFIX
 from aedev.base import (
@@ -90,7 +90,7 @@ class TestHelpers:
             assert frozen_req_file_path() == frozen_file_path
 
             fil_nam = 'xyz' + "." + 'abc'
-            write_file(fil_nam, b"")
+            write_bin_file(fil_nam, b"")
             assert frozen_req_file_path(req_file_path=norm_path(fil_nam)) == os_path_join(str(tmp_path), fil_nam)
 
     def test_increment_version(self):
