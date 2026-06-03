@@ -177,7 +177,7 @@ from aedev.commands import (                                                    
     editable_project_root_path, in_prj_dir_venv, git_remote_domain_group, git_remotes, git_tag_list)
 
 
-__version__ = '0.3.13'
+__version__ = '0.3.14'
 
 
 # PDV_* constants holding default values of all user/project specific configuration  ----------------------------------
@@ -821,9 +821,10 @@ class ProjectDevVars(dict[str, PdvVarValType]):
 
         self.update({k: v for k, v in pdv_default_values().items() if k not in self})
 
-        if not self['namespace_name'] and (namespace_name := PyMo(import_name).namespace_name):
-            py_mo = PyMo.from_path(project_path, namespace_name=namespace_name)
-            self['namespace_name'] = namespace_name
+        if 'namespace_name' not in self:
+            if namespace_name := PyMo(import_name).namespace_name:
+                py_mo = PyMo.from_path(project_path, namespace_name=namespace_name)
+            self['namespace_name'] = namespace_name     # put into self also if ""; needed by template context/dict vars
         namespace_name = self['namespace_name']
 
         if 'portion_name' not in self:
