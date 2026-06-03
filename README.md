@@ -1,14 +1,14 @@
-<!-- THIS FILE IS EXCLUSIVELY MAINTAINED by the project aedev.aedev v0.3.32 -->
-<!-- THIS FILE IS EXCLUSIVELY MAINTAINED by the project aedev.namespace_root_tpls v0.3.27 -->
-# project_vars 0.3.13
+<!-- THIS FILE IS EXCLUSIVELY MAINTAINED by the project aedev.aedev v0.3.33 -->
+<!-- THIS FILE IS EXCLUSIVELY MAINTAINED by the project aedev.namespace_root_tpls vlocal -->
+# project_vars 0.3.14
 
 [![GitLab develop](https://img.shields.io/gitlab/pipeline/aedev-group/aedev_project_vars/develop?logo=python)](
     https://gitlab.com/aedev-group/aedev_project_vars)
 [![LatestPyPIrelease](
-    https://img.shields.io/gitlab/pipeline/aedev-group/aedev_project_vars/release0.3.13?logo=python)](
-    https://gitlab.com/aedev-group/aedev_project_vars/-/tree/release0.3.13)
+    https://img.shields.io/gitlab/pipeline/aedev-group/aedev_project_vars/release0.3.14?logo=python)](
+    https://gitlab.com/aedev-group/aedev_project_vars/-/tree/release0.3.14)
 [![PyPIVersions](https://img.shields.io/pypi/v/aedev_project_vars)](
-    https://pypi.org/project/aedev-project-vars/#history)
+    https://pypi.org/project/aedev-project_vars/#history)
 
 >aedev namespace module portion project_vars: project development variables.
 
@@ -26,13 +26,13 @@
 [![PyPIWheel](https://img.shields.io/pypi/wheel/aedev_project_vars)](
     https://gitlab.com/aedev-group/aedev_project_vars/)
 [![PyPIFormat](https://img.shields.io/pypi/format/aedev_project_vars)](
-    https://pypi.org/project/aedev-project-vars/)
+    https://pypi.org/project/aedev-project_vars/)
 [![PyPILicense](https://img.shields.io/pypi/l/aedev_project_vars)](
     https://gitlab.com/aedev-group/aedev_project_vars/-/blob/develop/LICENSE.md)
 [![PyPIStatus](https://img.shields.io/pypi/status/aedev_project_vars)](
-    https://libraries.io/pypi/aedev-project-vars)
+    https://libraries.io/pypi/aedev-project_vars)
 [![PyPIDownloads](https://img.shields.io/pypi/dm/aedev_project_vars)](
-    https://pypi.org/project/aedev-project-vars/#files)
+    https://pypi.org/project/aedev-project_vars/#files)
 
 
 
@@ -43,7 +43,7 @@ aedev.project_vars module
 in the currently active virtual environment:
  
 ```shell script
-pip install aedev-project-vars
+pip install aedev-project_vars
 ```
 
 if you want to contribute to this portion then first fork
@@ -54,13 +54,17 @@ following command in the root folder of this repository
 (aedev_project_vars):
 
 ```shell script
-pip install -e .[dev]
+pip install --editable .[dev]
 ```
 
-the last command will install this module portion, along with the tools you need
-to develop and run tests or to extend the portion documentation. to contribute only to the unit tests or to the
-documentation of this portion, replace the setup extras key `dev` in the above command with `tests` or `docs`
-respectively.
+this command installs this module portion project
+along with the necessary tools to modify the source code,
+run unit tests, and build documentation. to install only
+the dependencies required for a specific task,  replace
+`dev` with one of the following:
+
+    * `tests`: for contributing to the unit test suite
+    * `docs`: for maintaining and building documentation
 
 more detailed explanations on how to contribute to this project
 [are available here](
