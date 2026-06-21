@@ -477,10 +477,16 @@ class TestHelpers:
     def test_skip_files_lean_web(self):
         assert skip_files_lean_web(os_path_join("any_pkg", PY_CACHE_FOLDER, "any_filename"))
         assert skip_files_lean_web(os_path_join("any_pkg", 'migrations', "any_filename"))
-        assert skip_files_lean_web(os_path_join("any_pkg", 'static', "any_filename"))
         assert skip_files_lean_web(os_path_join("any_pkg", "any_i18n_dir", "any_filename" + '.po'))
 
-        assert not skip_files_lean_web(os_path_join('static', "any_file.ext"))
+        assert skip_files_lean_web(os_path_join("any_pkg", 'static', "any_filename"))
+
+        assert skip_files_lean_web(os_path_join(PY_CACHE_FOLDER, "any_filename"))
+        assert skip_files_lean_web(os_path_join('migrations', "any_filename"))
+        assert skip_files_lean_web(os_path_join("any_i18n_dir", "any_filename" + '.po'))
+
+        assert not skip_files_lean_web(os_path_join('static', "any_filename"))
+        assert skip_files_lean_web("/" + os_path_join('static', "any_filename"))
 
 
 class TestProjectDevVars:
@@ -1382,7 +1388,7 @@ class TestProjectTypeAndResources:
         assert pdv['project_path'] == norm_path(project_path)
         assert pdv['project_name'] == project_name
         assert pdv['namespace_name'] == ""
-        assert pdv['package_path'] == project_path + os.path.sep
+        assert pdv['package_path'] == project_path + "/"
         assert pdv['project_type'] == APP_PRJ
 
         pkg_data = pdv.pdv_val('package_data')
@@ -1418,7 +1424,7 @@ class TestProjectTypeAndResources:
         pdv = ProjectDevVars(project_path=new_prj_path)
 
         assert pdv['namespace_name'] == ""
-        assert pdv['package_path'] == new_prj_path + os.path.sep
+        assert pdv['package_path'] == new_prj_path + "/"
         assert pdv['project_path'] == new_prj_path
         assert pdv['portion_name'] == ""
         assert pdv['project_name'] == tst_project_name
@@ -1429,7 +1435,7 @@ class TestProjectTypeAndResources:
 
         pdv = ProjectDevVars(project_path=project_path)
         assert isinstance(pdv, dict)
-        assert pdv['project_path'].endswith(os.path.sep + project_path)
+        assert pdv['project_path'].endswith("/" + project_path)
         assert pdv['project_name'] == project_path
         assert pdv['namespace_name'] == ""
         assert pdv['portion_name'] == ""

@@ -1,14 +1,14 @@
 <!-- THIS FILE IS EXCLUSIVELY MAINTAINED by the project aedev.aedev v0.3.33 -->
 <!-- THIS FILE IS EXCLUSIVELY MAINTAINED by the project aedev.namespace_root_tpls vlocal -->
-# project_vars 0.3.14
+# project_vars 0.3.15
 
 [![GitLab develop](https://img.shields.io/gitlab/pipeline/aedev-group/aedev_project_vars/develop?logo=python)](
     https://gitlab.com/aedev-group/aedev_project_vars)
 [![LatestPyPIrelease](
-    https://img.shields.io/gitlab/pipeline/aedev-group/aedev_project_vars/release0.3.14?logo=python)](
-    https://gitlab.com/aedev-group/aedev_project_vars/-/tree/release0.3.14)
+    https://img.shields.io/gitlab/pipeline/aedev-group/aedev_project_vars/release0.3.15?logo=python)](
+    https://gitlab.com/aedev-group/aedev_project_vars/-/tree/release0.3.15)
 [![PyPIVersions](https://img.shields.io/pypi/v/aedev_project_vars)](
-    https://pypi.org/project/aedev-project_vars/#history)
+    https://pypi.org/project/aedev-project-vars/#history)
 
 >aedev namespace module portion project_vars: project development variables.
 
@@ -26,13 +26,13 @@
 [![PyPIWheel](https://img.shields.io/pypi/wheel/aedev_project_vars)](
     https://gitlab.com/aedev-group/aedev_project_vars/)
 [![PyPIFormat](https://img.shields.io/pypi/format/aedev_project_vars)](
-    https://pypi.org/project/aedev-project_vars/)
+    https://pypi.org/project/aedev-project-vars/)
 [![PyPILicense](https://img.shields.io/pypi/l/aedev_project_vars)](
     https://gitlab.com/aedev-group/aedev_project_vars/-/blob/develop/LICENSE.md)
 [![PyPIStatus](https://img.shields.io/pypi/status/aedev_project_vars)](
-    https://libraries.io/pypi/aedev-project_vars)
+    https://libraries.io/pypi/aedev-project-vars)
 [![PyPIDownloads](https://img.shields.io/pypi/dm/aedev_project_vars)](
-    https://pypi.org/project/aedev-project_vars/#files)
+    https://pypi.org/project/aedev-project-vars/#files)
 
 
 
@@ -43,7 +43,7 @@ aedev.project_vars module
 in the currently active virtual environment:
  
 ```shell script
-pip install aedev-project_vars
+pip install aedev-project-vars
 ```
 
 if you want to contribute to this portion then first fork
