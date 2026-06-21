@@ -156,7 +156,7 @@ from ae.base import (                                                           
     TESTS_FOLDER,
     deep_dict_update, evaluate_literal, norm_path,
     os_path_abspath, os_path_join, os_path_isfile, os_path_dirname, os_path_basename, os_path_isdir, os_path_relpath,
-    os_path_sep, os_path_splitext, read_file, write_file)
+    os_path_splitext, read_file, write_file)
 from ae.system import APP_BUILD_CFG_FILENAME, MODULE_NAME_SEPS, project_main_file, PyMo                 # type: ignore
 from ae.paths import coll_folders, path_files, path_items, skip_py_cache_files, Collector               # type: ignore
 from ae.core import debug_out                                                                           # type: ignore
@@ -177,7 +177,7 @@ from aedev.commands import (                                                    
     editable_project_root_path, in_prj_dir_venv, git_remote_domain_group, git_remotes, git_tag_list)
 
 
-__version__ = '0.3.14'
+__version__ = '0.3.15'
 
 
 # PDV_* constants holding default values of all user/project specific configuration  ----------------------------------
@@ -253,11 +253,11 @@ def find_extra_modules(package_path: str, tpls_folder: str) -> list[str]:
         return []
 
     def _select_file(file_path: str) -> bool:
-        return (not os_path_relpath(file_path, package_path).startswith(tpls_folder + os_path_sep)
+        return (not os_path_relpath(file_path, package_path).replace("\\", "/").startswith(tpls_folder + "/")
                 and os_path_basename(file_path) != PY_INIT)
 
     def _create_file(file_path: str) -> str:
-        return os_path_relpath(file_path, package_path).replace(os_path_sep, '.')[:-len(PY_EXT)]
+        return os_path_relpath(file_path, package_path).replace("\\", "/").replace("/", ".")[:-len(PY_EXT)]
 
     return path_items(os_path_join(package_path, "**", '*' + PY_EXT), selector=_select_file, creator=_create_file)
 
@@ -495,7 +495,7 @@ def skip_files_lean_web(file_path: str) -> bool:
     """
     return (skip_py_cache_files(file_path)
             or skip_files_migrations(file_path)
-            or os_path_sep + 'static' + os_path_sep in file_path
+            or 'static' in file_path.replace("\\", "/").split("/")[1:]  # not skipped in relative project root path
             or os_path_splitext(file_path)[1] == '.po'
             )
 
@@ -507,7 +507,7 @@ def skip_files_migrations(file_path: str) -> bool:
     :return:                boolean True, if the file specified in :paramref:`~skip_files_migrations.file_path`
                             has to be excluded, else False.
     """
-    return 'migrations' in file_path.split(os_path_sep)
+    return 'migrations' in file_path.replace("\\", "/").split("/")  # os.path.sep is wrong in MS Win bash-emulation&WSL
 
 
 class ProjectDevVars(dict[str, PdvVarValType]):
@@ -631,7 +631,7 @@ class ProjectDevVars(dict[str, PdvVarValType]):
         if 'docs_root' not in self:
             self['docs_root'] = f"{self['DOCS_HOST_PROTOCOL']}{docs_prefix}.{self['docs_domain']}"
         docs_root = self['docs_root']
-        self['docs_code'] = f"{docs_root}/en/latest/_modules/{self['import_name'].replace('.', '/')}.html"
+        self['docs_code'] = f"{docs_root}/en/latest/_modules/{self['import_name'].replace('.', "/")}.html"
         self['docs_url'] = f"{docs_root}/en/latest/_autosummary/{self['import_name']}.html"
 
         if 'repo_group' not in self:
@@ -728,8 +728,8 @@ class ProjectDevVars(dict[str, PdvVarValType]):
 
         def _add_file(file_name: str):
             if os_path_isfile(file_name):
-                rel_path = os_path_relpath(file_name, package_path)
-                if not any(_.startswith("_") for _ in rel_path.split(os_path_sep)):
+                rel_path = os_path_relpath(file_name, package_path).replace("\\", "/")
+                if not any(_.startswith("_") for _ in rel_path.split("/")):
                     files.append(rel_path)
 
         _add_file(os_path_join(package_path, self['APP_BUILD_CFG_FILENAME']))
