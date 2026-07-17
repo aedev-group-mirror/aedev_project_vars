@@ -225,7 +225,7 @@ class TestHelpers:
         assert 'TEMPLATE_INCLUDE_FILE_PLACEHOLDER_ID' in values
         assert 'TEMPLATE_REPLACE_WITH_PLACEHOLDER_ID' in values
 
-        assert len(values) == 30  # adapted on remove, e.g. empty-vars PDV_AUTHOR, PDV_AUTHOR_EMAIL, PDV_DOCS_SUB_DOMAIN
+        assert len(values) == 31  # adapted on remove, e.g. empty-vars PDV_AUTHOR, PDV_AUTHOR_EMAIL, PDV_DOCS_SUB_DOMAIN
 
     def test_pdv_env_values_dict(self, monkeypatch):
         dict_var = ENV_VAR_NAME_PREFIX + "DICT_VAR"
