@@ -118,8 +118,9 @@ project development variable value constants
   * :data:`PDV_REPO_PAGES_DOMAIN`: the internet/dns domain for repository pages (e.g., `gitlab.io`).
   * :data:`PDV_REPO_GROUP_SUFFIX`: the suffix used for the default repository users group name.
   * :data:`PDV_REPO_ISSUES_SUFFIX`: the url suffix for the repository's issues page (e.g., `/-/issues`).
-  * :data:`PDV_REQ_FILE_NAME`: the default filename for the main project dependencies (e.g., `requirements.txt`).
   * :data:`PDV_REQ_DEV_FILE_NAME`: the default filename for development or template-specific requirements.
+  * :data:`PDV_REQ_FILE_NAME`: the default filename for the main project dependencies (e.g., `requirements.txt`).
+  * :data:`PDV_REQ_FILE_PATHS`: tuple of the relative paths of the runtime/dev/tests/docs requirements files.
   * :data:`PDV_TEMPLATES_FOLDER`: the default folder name for file templates (e.g., `templates`).
   * :data:`PDV_TESTS_FOLDER`: the default folder name for unit tests (e.g., `tests`).
   * :data:`PDV_VERSION_TAG_PREFIX`: the prefix for git version tags.
@@ -139,6 +140,7 @@ value gets directly passed to the `package_data` development variable, which wil
 the ``setup.py`` file of your project (as kwarg passed to :func:`setuptools.setup`).
 """
 # pylint: disable=too-many-lines
+from __future__ import annotations
 import getpass
 import glob
 import os
@@ -146,7 +148,8 @@ import re
 import warnings
 
 from collections import OrderedDict
-from typing import Any, Callable, Iterable, OrderedDict as OrderedDictType, Sequence, Union, cast
+from collections.abc import Callable, Iterable, Sequence
+from typing import Any, OrderedDict as OrderedDictType, cast
 
 from packaging.version import Version
 from setuptools import find_namespace_packages, find_packages
@@ -177,7 +180,7 @@ from aedev.commands import (                                                    
     editable_project_root_path, in_prj_dir_venv, git_remote_domain_group, git_remotes, git_tag_list)
 
 
-__version__ = '0.3.15'
+__version__ = '0.3.16'
 
 
 # PDV_* constants holding default values of all user/project specific configuration  ----------------------------------
@@ -190,6 +193,9 @@ PDV_DOCS_FOLDER = DOCS_FOLDER                           #: docs folder name
 PDV_DOCS_HOST_PROTOCOL = "https://"                     #: documentation host connection protocol
 # pylint: disable-next=invalid-name
 PDV_docs_domain = 'readthedocs.io'                      #: documentation dns domain
+
+PDV_RELEASE_REF_PREFIX = GIT_RELEASE_REF_PREFIX         #: project release git branch-name/ref prefix
+PDV_VERSION_TAG_PREFIX = GIT_VERSION_TAG_PREFIX         #: project version git tag prefix
 
 PDV_KEYWORDS = ['configuration', 'development', 'environment', 'productivity']  #: PyPi release keywords
 
@@ -208,6 +214,9 @@ PDV_PARENT_FOLDERS = (
 
 PDV_PYTHON_REQUIRES = f">={PDV_MIN_PYTHON_VERSION}"     #: default required Python version of project
 
+PDV_REMOTE_ORIGIN = GIT_REMOTE_ORIGIN                   #: name of git remote from where the local repo get cloned from
+PDV_REMOTE_UPSTREAM = GIT_REMOTE_UPSTREAM               #: name of git remote from where the fork repo get forked from
+
 PDV_REPO_HOST_PROTOCOL = "https://"                     #: repo host connection protocol
 # pylint: disable-next=invalid-name
 PDV_repo_domain = 'gitlab.com'                          #: code repository dns domain (gitlab.com|github.com)
@@ -217,14 +226,16 @@ PDV_REPO_ISSUES_SUFFIX = "/-/issues"                    #: repo host URL suffix 
 
 PDV_REQ_FILE_NAME = 'requirements.txt'                  #: requirements default file name
 PDV_REQ_DEV_FILE_NAME = 'dev_requirements.txt'          #: default file name for development/template requirements
+PDV_REQ_FILE_PATHS = (
+        PDV_REQ_FILE_NAME,
+        PDV_REQ_DEV_FILE_NAME,
+        os_path_join(DOCS_FOLDER, PDV_REQ_FILE_NAME),
+        os_path_join(TESTS_FOLDER, PDV_REQ_FILE_NAME),
+    )
+""" tuple of the relative paths of the runtime/dev/tests/docs requirements files. """
 
 PDV_TEMPLATES_FOLDER = TEMPLATES_FOLDER                 #: templates folder name
 PDV_TESTS_FOLDER = TESTS_FOLDER                         #: unit tests folder name
-
-PDV_RELEASE_REF_PREFIX = GIT_RELEASE_REF_PREFIX         #: project release branch-name/ref prefix
-PDV_VERSION_TAG_PREFIX = GIT_VERSION_TAG_PREFIX         #: project version tag prefix
-PDV_REMOTE_ORIGIN = GIT_REMOTE_ORIGIN                   #: name of git remote from where the local repo get cloned from
-PDV_REMOTE_UPSTREAM = GIT_REMOTE_UPSTREAM               #: name of git remote from where the fork repo get forked from
 
 # types ---------------------------------------------------------------------------------------------------------------
 ChildrenType = OrderedDictType[str, 'ProjectDevVars']   #: children pdv of a project parent or a namespace root
@@ -233,8 +244,8 @@ DataFilesType = list[tuple[str, tuple[str, ...]]]       #: setup_kwargs['data_fi
 PackageDataType = dict[str, list[str]]                  #: setup_kwargs['package_data']
 SetupKwargsType = dict[str, Any]                        #: setuptools.setup()-kwargs
 
-PdvVarValType = Union[str, Sequence[str], DataFilesType, GitRemotesType, SetupKwargsType, TemplateProjectsType,
-                      'RemoteHost']     # type: ignore # noqa: F821 # RemoteHost is declared in aedev_project_manager
+type PdvVarValType = (str | Sequence[str] | DataFilesType | GitRemotesType | SetupKwargsType | TemplateProjectsType
+                      | 'RemoteHost')  # type: ignore # noqa: F821 # RemoteHost is declared in aedev_project_manager
 """ project development variable value types, including also types of later/externally added vars by pjm, like e.g.
 'TemplateProjectsType' for the 'project_templates' variable, or 'RemoteHost' for the 'host_api' variable,
 or dict[str, str] for the 'main_app_options' variable (already covered via SetupKwargsType/dict[str, Any]. """
@@ -276,7 +287,7 @@ def frozen_req_file_path(req_file_path: str = PDV_REQ_FILE_NAME, strict: bool = 
     return frozen_file_path if os_path_isfile(frozen_file_path) else "" if strict else req_file_path
 
 
-def increment_version(version: Union[str, Iterable[str]], increment_part: int = 3) -> str:
+def increment_version(version: str | Iterable[str], increment_part: int = 3) -> str:
     """ increment version number.
 
     :param version:             version number string or an iterable of version string parts.
@@ -290,7 +301,7 @@ def increment_version(version: Union[str, Iterable[str]], increment_part: int = 
                     for part_idx, part_str in enumerate(version))
 
 
-def latest_remote_version(pdv: 'ProjectDevVars', increment_part: int = 3) -> str:
+def latest_remote_version(pdv: ProjectDevVars, increment_part: int = 3) -> str:
     """ determine the latest or the next free origin remote repository version of the specified project.
 
     :param pdv:                 project development variables (project_path, project_version, VERSION_TAG_PREFIX).
@@ -452,7 +463,7 @@ def replace_file_version(file_name: str, version: str = "", increment_part: int 
     if not content:
         return msg + f"non-empty code file in {os_path_abspath(file_name)}"
 
-    _replacement: Union[str, Callable[[re.Match[str]], str]]
+    _replacement: str | Callable[[re.Match[str]], str]
     if version:
         _replacement = VERSION_PREFIX + increment_version(version, increment_part=increment_part) + VERSION_QUOTE
     else:
@@ -974,7 +985,7 @@ class ProjectDevVars(dict[str, PdvVarValType]):
                                if _name not in ('project_name', 'project_path')}
         return chi_app_options
 
-    def copy(self) -> "ProjectDevVars":
+    def copy(self) -> ProjectDevVars:
         """ create a copy of this ProjectDevVars instance. """
         dict_data = super().copy()
         dict_data.pop('project_name')
