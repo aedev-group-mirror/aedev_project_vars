@@ -95,35 +95,46 @@ excluding templates and `__init__.py` files.
 * :func:`skip_files_lean_web` – filter callback to minimize files for web deployment.
 * :func:`replace_file_version` – update a file’s version string in place.
 
-project development variable value constants
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+project development variable default value constants
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
   * :data:`PDV_APP_BUILD_CFG_FILENAME`: the name of the application building configuration file (e.g. `buildozer.spec`).
+  * :data:`PDV_CODE_LINE_LENGTH`: maximum length of a code line.
   * :data:`PDV_COMMIT_MSG_FILE_NAME`: the default file name for a git commit message.
+  * :data:`PDV_docs_domain`: the default dns domain for documentation (e.g., `readthedocs.io`).
   * :data:`PDV_DOCS_FOLDER`: the default folder name for documentation (e.g., `docs`).
   * :data:`PDV_DOCS_HOST_PROTOCOL`: the default protocol for the documentation host (e.g., `https://`).
-  * :data:`PDV_docs_domain`: the default dns domain for documentation (e.g., `readthedocs.io`).
+  * :data:`PDV_GIT_RELEASE_REF_PREFIX`: the prefix for project release branch names or references.
+  * :data:`PDV_GIT_VERSION_TAG_PREFIX`: the prefix for git version tags.
   * :data:`PDV_KEYWORDS`: a list of default keywords for :pypi:`pypi` release metadata.
   * :data:`PDV_LICENSE`: the default license for the project (e.g., `gpl-3.0-or-later`, :pep:`639`).
   * :data:`PDV_MAIN_BRANCH`: the default name for the main branch in a git repository.
   * :data:`PDV_MIN_PYTHON_VERSION`: the minimum version of the python runtime required for the project (e.g., `3.9`).
   * :data:`PDV_NULL_VERSION`: the initial package version, chosen to meet :pypi:`pypi` classifier requirements.
   * :data:`PDV_PARENT_FOLDERS`: a tuple of common names for parent folders that contain python project directories.
+  * :data:`PDV_PYPI_COOLDOWN`: pypi project cooldown date or duration (option value of pip --uploaded-prior-to).
   * :data:`PDV_PYTHON_REQUIRES`: the default required python version string for setup files (e.g., `>=3.9`).
-  * :data:`PDV_RELEASE_REF_PREFIX`: the prefix for project release branch names or references.
   * :data:`PDV_REMOTE_ORIGIN`: the name of the git remote from which the local repository was cloned.
   * :data:`PDV_REMOTE_UPSTREAM`: the name of the git remote for the fork's source repository.
-  * :data:`PDV_REPO_HOST_PROTOCOL`: the default protocol for the code repository host (e.g., `https://`).
   * :data:`PDV_repo_domain`: the default dns domain for the code repository (e.g., `gitlab.com`).
-  * :data:`PDV_REPO_PAGES_DOMAIN`: the internet/dns domain for repository pages (e.g., `gitlab.io`).
   * :data:`PDV_REPO_GROUP_SUFFIX`: the suffix used for the default repository users group name.
+  * :data:`PDV_REPO_HOST_PROTOCOL`: the default protocol for the code repository host (e.g., `https://`).
   * :data:`PDV_REPO_ISSUES_SUFFIX`: the url suffix for the repository's issues page (e.g., `/-/issues`).
+  * :data:`PDV_REPO_PAGES_DOMAIN`: the internet/dns domain for repository pages (e.g., `gitlab.io`).
   * :data:`PDV_REQ_DEV_FILE_NAME`: the default filename for development or template-specific requirements.
   * :data:`PDV_REQ_FILE_NAME`: the default filename for the main project dependencies (e.g., `requirements.txt`).
   * :data:`PDV_REQ_FILE_PATHS`: tuple of the relative paths of the runtime/dev/tests/docs requirements files.
   * :data:`PDV_TEMPLATES_FOLDER`: the default folder name for file templates (e.g., `templates`).
   * :data:`PDV_TESTS_FOLDER`: the default folder name for unit tests (e.g., `tests`).
-  * :data:`PDV_VERSION_TAG_PREFIX`: the prefix for git version tags.
+
+all these PDV_-constant-values are used as item defaults for any :class:`ProjectDevVars` mapping; the
+mapping keys are without the `PDV_`-prefix. additionally included in every mapping instance are the (5) constants
+imported from :mod:`ae.managed_files` (named with a TEMPLATE_-prefix).
+
+.. hint::
+    the values of these PDV_-constants can be customized per project by declaring them with the same name as
+    OS environment variables or in project-specific .env files.
+
 
 
 configure individual project development variable values
@@ -180,22 +191,25 @@ from aedev.commands import (                                                    
     editable_project_root_path, in_prj_dir_venv, git_remote_domain_group, git_remotes, git_tag_list)
 
 
-__version__ = '0.3.16'
+__version__ = '0.3.17'
 
 
 # PDV_* constants holding default values of all user/project specific configuration  ----------------------------------
 
 ENV_VAR_NAME_PREFIX = 'PDV_'            #: used for env var names and the constant names declared in this module
 
-PDV_COMMIT_MSG_FILE_NAME = COMMIT_MSG_FILE_NAME         #: name of the git commit message file
 PDV_APP_BUILD_CFG_FILENAME = APP_BUILD_CFG_FILENAME     #: app building config file
-PDV_DOCS_FOLDER = DOCS_FOLDER                           #: docs folder name
-PDV_DOCS_HOST_PROTOCOL = "https://"                     #: documentation host connection protocol
+PDV_CODE_LINE_LENGTH = 120                              #: maximum length of a code line
+PDV_COMMIT_MSG_FILE_NAME = COMMIT_MSG_FILE_NAME         #: name of the git commit message file
+
 # pylint: disable-next=invalid-name
 PDV_docs_domain = 'readthedocs.io'                      #: documentation dns domain
 
-PDV_RELEASE_REF_PREFIX = GIT_RELEASE_REF_PREFIX         #: project release git branch-name/ref prefix
-PDV_VERSION_TAG_PREFIX = GIT_VERSION_TAG_PREFIX         #: project version git tag prefix
+PDV_DOCS_FOLDER = DOCS_FOLDER                           #: docs folder name
+PDV_DOCS_HOST_PROTOCOL = "https://"                     #: documentation host connection protocol
+
+PDV_GIT_RELEASE_REF_PREFIX = GIT_RELEASE_REF_PREFIX     #: project release git branch-name/ref prefix
+PDV_GIT_VERSION_TAG_PREFIX = GIT_VERSION_TAG_PREFIX     #: project version git tag prefix
 
 PDV_KEYWORDS = ['configuration', 'development', 'environment', 'productivity']  #: PyPi release keywords
 
@@ -212,20 +226,22 @@ PDV_PARENT_FOLDERS = (
     'repos', 'source', DEF_PROJECT_PARENT_FOLDER, TEST_PROJECTS_PARENT_FOLDER, getpass.getuser())
 """ names of parent folders containing Python project directories """
 
-PDV_PYTHON_REQUIRES = f">={PDV_MIN_PYTHON_VERSION}"     #: default required Python version of project
+PDV_PYPI_COOLDOWN = "P6D"                               #: pypi cooldown date or duration (see pip --uploaded-prior-to)
+
+PDV_PYTHON_REQUIRES = f">={PDV_MIN_PYTHON_VERSION}"     #: setuptools setup() `python_requires` kwarg value (with op)
 
 PDV_REMOTE_ORIGIN = GIT_REMOTE_ORIGIN                   #: name of git remote from where the local repo get cloned from
 PDV_REMOTE_UPSTREAM = GIT_REMOTE_UPSTREAM               #: name of git remote from where the fork repo get forked from
 
-PDV_REPO_HOST_PROTOCOL = "https://"                     #: repo host connection protocol
 # pylint: disable-next=invalid-name
 PDV_repo_domain = 'gitlab.com'                          #: code repository dns domain (gitlab.com|github.com)
-PDV_REPO_PAGES_DOMAIN = 'gitlab.io'                     #: repository pages internet/dns domain
 PDV_REPO_GROUP_SUFFIX = "-group"                        #: repo users group name suffix (used for 'repo_group' default)
+PDV_REPO_HOST_PROTOCOL = "https://"                     #: repo host connection protocol
 PDV_REPO_ISSUES_SUFFIX = "/-/issues"                    #: repo host URL suffix to the issues page (GitHub=="/issues")
+PDV_REPO_PAGES_DOMAIN = 'gitlab.io'                     #: repository pages internet/dns domain
 
-PDV_REQ_FILE_NAME = 'requirements.txt'                  #: requirements default file name
 PDV_REQ_DEV_FILE_NAME = 'dev_requirements.txt'          #: default file name for development/template requirements
+PDV_REQ_FILE_NAME = 'requirements.txt'                  #: requirements default file name
 PDV_REQ_FILE_PATHS = (
         PDV_REQ_FILE_NAME,
         PDV_REQ_DEV_FILE_NAME,
@@ -304,7 +320,7 @@ def increment_version(version: str | Iterable[str], increment_part: int = 3) -> 
 def latest_remote_version(pdv: ProjectDevVars, increment_part: int = 3) -> str:
     """ determine the latest or the next free origin remote repository version of the specified project.
 
-    :param pdv:                 project development variables (project_path, project_version, VERSION_TAG_PREFIX).
+    :param pdv:                 project development variables (project_path, project_version, GIT_VERSION_TAG_PREFIX).
     :param increment_part:      part of the version number to be incremented (1=mayor, 2=minor/namespace, 3=patch).
                                 pass zero/0 to return the latest published package version.
     :return:                    the incremented latest published repository package version as a string or the first
@@ -312,7 +328,7 @@ def latest_remote_version(pdv: ProjectDevVars, increment_part: int = 3) -> str:
                                 if the project never published a version tag to the git origin remote.
     """
     project_path = pdv['project_path']
-    tag_prefix = pdv['VERSION_TAG_PREFIX']
+    tag_prefix = pdv['GIT_VERSION_TAG_PREFIX']
     latest_version = pdv['NULL_VERSION']
 
     if os_path_isdir(os_path_join(project_path, GIT_FOLDER_NAME)):

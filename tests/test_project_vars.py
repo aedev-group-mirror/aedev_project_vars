@@ -208,24 +208,24 @@ class TestHelpers:
     def test_pdv_default_values(self):
         values = pdv_default_values()
 
-        assert 'COMMIT_MSG_FILE_NAME' in values  # from ae.shell
+        assert 'COMMIT_MSG_FILE_NAME' in values                     # from ae.shell
         assert values['COMMIT_MSG_FILE_NAME'] == COMMIT_MSG_FILE_NAME
 
-        assert 'DOCS_FOLDER' in values  # from ae.base
+        assert 'DOCS_FOLDER' in values                              # from ae.base
         assert values['DOCS_FOLDER'] == DOCS_FOLDER
 
-        assert 'PARENT_FOLDERS' in values  # from aedev.project_vars
+        assert 'PARENT_FOLDERS' in values                           # from aedev.project_vars
         assert values['PARENT_FOLDERS'] == PDV_PARENT_FOLDERS
 
-        assert 'TEMPLATE_PLACEHOLDER_ID_PREFIX' in values  # from ae.managed_files
+        assert 'TEMPLATE_PLACEHOLDER_ID_PREFIX' in values           # from ae.managed_files
         assert values['TEMPLATE_PLACEHOLDER_ID_PREFIX'] == TEMPLATE_PLACEHOLDER_ID_PREFIX
-
         assert 'TEMPLATE_PLACEHOLDER_ID_SUFFIX' in values
         assert 'TEMPLATE_PLACEHOLDER_ARGS_SUFFIX' in values
         assert 'TEMPLATE_INCLUDE_FILE_PLACEHOLDER_ID' in values
         assert 'TEMPLATE_REPLACE_WITH_PLACEHOLDER_ID' in values
 
-        assert len(values) == 31  # adapted on remove, e.g. empty-vars PDV_AUTHOR, PDV_AUTHOR_EMAIL, PDV_DOCS_SUB_DOMAIN
+        # PDV_/TEMPLATE_-vars defaults (w/o empty-default-val-vars like namespace_name, PDV_AUTHOR, PDV_DOCS_SUB_DOMAIN)
+        assert len(values) == 33
 
     def test_pdv_env_values_dict(self, monkeypatch):
         dict_var = ENV_VAR_NAME_PREFIX + "DICT_VAR"
@@ -1036,7 +1036,7 @@ class TestProjectDevVars:
         assert pdv['project_type'] == NO_PRJ
 
     def test_ini_pdv_from_project_name(self, monkeypatch, empty_prj_path, new_prj_path):
-        monkeypatch.chdir(os_path_dirname(empty_prj_path))
+        monkeypatch.chdir(str(os_path_dirname(empty_prj_path)))
 
         pdv = ProjectDevVars(project_name=tst_project_name)
 
@@ -1045,7 +1045,7 @@ class TestProjectDevVars:
         assert pdv['project_path'] == empty_prj_path
         assert pdv['project_type'] == NO_PRJ
 
-        monkeypatch.chdir(os_path_dirname(new_prj_path))
+        monkeypatch.chdir(str(os_path_dirname(new_prj_path)))
 
         pdv = ProjectDevVars(project_name=tst_project_name)
 
@@ -1055,7 +1055,7 @@ class TestProjectDevVars:
         assert pdv['project_type'] == NO_PRJ
 
     def test_ini_pdv_from_project_name_with_type_and_namespace(self, monkeypatch, empty_prj_path, new_prj_path):
-        monkeypatch.chdir(os_path_dirname(empty_prj_path))
+        monkeypatch.chdir(str(os_path_dirname(empty_prj_path)))
 
         pdv = ProjectDevVars(project_name=tst_project_name, project_type=MODULE_PRJ)
 
@@ -1075,7 +1075,7 @@ class TestProjectDevVars:
         assert pdv['namespace_name'] == tst_namespace
         assert pdv['version_file'] == os_path_join(empty_prj_path, tst_namespace, tst_portion_name, PY_INIT)
 
-        monkeypatch.chdir(os_path_dirname(new_prj_path))
+        monkeypatch.chdir(str(os_path_dirname(new_prj_path)))
 
         pdv = ProjectDevVars(project_name=tst_project_name, project_type=PACKAGE_PRJ)
 
@@ -1562,7 +1562,7 @@ class TestProjectTypeAndResources:
         assert pkg_data[''] == [os_path_join(TEMPLATES_FOLDER, 'template.file')]
 
     def test_parent_project(self, empty_prj_path):
-        parent_dir = os_path_dirname(empty_prj_path)
+        parent_dir = str(os_path_dirname(empty_prj_path))
         parent_name = os_path_basename(parent_dir)
         child_prj_name = os_path_basename(empty_prj_path)
 
@@ -1596,7 +1596,7 @@ class TestProjectTypeAndResources:
 
     def test_sub_package(self, empty_prj_path):
         mod_name = 'x_module1'
-        tst_file1 = os_path_join(empty_prj_path, PY_INIT)
+        tst_file1 = str(os_path_join(empty_prj_path, PY_INIT))
         tst_file2 = os_path_join(empty_prj_path, mod_name + PY_EXT)
         write_file(tst_file1, "v_nam = 3")
         write_file(tst_file2, "v_nam = 6")
