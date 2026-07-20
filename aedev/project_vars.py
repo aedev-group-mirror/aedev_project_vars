@@ -112,7 +112,8 @@ project development variable default value constants
   * :data:`PDV_MIN_PYTHON_VERSION`: the minimum version of the python runtime required for the project (e.g., `3.9`).
   * :data:`PDV_NULL_VERSION`: the initial package version, chosen to meet :pypi:`pypi` classifier requirements.
   * :data:`PDV_PARENT_FOLDERS`: a tuple of common names for parent folders that contain python project directories.
-  * :data:`PDV_PYPI_COOLDOWN`: pypi project cooldown date or duration (option value of pip --uploaded-prior-to).
+  * :data:`PDV_PYPI_COOLDOWN_EXCLUDES`: comma-list of ?-/*-wildcard masks to filter/exlude pypi packages from cooldown.
+  * :data:`PDV_PYPI_COOLDOWN_PERIOD`: pypi project cooldown date or duration (option value of pip --uploaded-prior-to).
   * :data:`PDV_PYTHON_REQUIRES`: the default required python version string for setup files (e.g., `>=3.9`).
   * :data:`PDV_REMOTE_ORIGIN`: the name of the git remote from which the local repository was cloned.
   * :data:`PDV_REMOTE_UPSTREAM`: the name of the git remote for the fork's source repository.
@@ -191,7 +192,7 @@ from aedev.commands import (                                                    
     editable_project_root_path, in_prj_dir_venv, git_remote_domain_group, git_remotes, git_tag_list)
 
 
-__version__ = '0.3.17'
+__version__ = '0.3.18'
 
 
 # PDV_* constants holding default values of all user/project specific configuration  ----------------------------------
@@ -226,7 +227,8 @@ PDV_PARENT_FOLDERS = (
     'repos', 'source', DEF_PROJECT_PARENT_FOLDER, TEST_PROJECTS_PARENT_FOLDER, getpass.getuser())
 """ names of parent folders containing Python project directories """
 
-PDV_PYPI_COOLDOWN = "P6D"                               #: pypi cooldown date or duration (see pip --uploaded-prior-to)
+PDV_PYPI_COOLDOWN_EXCLUDES = "ae_*,aedev_*"             #: package names excluded from cooldown (newest gets installed)
+PDV_PYPI_COOLDOWN_PERIOD = "P9D"                        #: pypi cooldown date or duration (see pip --uploaded-prior-to)
 
 PDV_PYTHON_REQUIRES = f">={PDV_MIN_PYTHON_VERSION}"     #: setuptools setup() `python_requires` kwarg value (with op)
 
