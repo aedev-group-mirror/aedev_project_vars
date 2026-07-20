@@ -82,7 +82,7 @@ setup_kwargs: dict[str, Any] = {
     },
     'python_requires': '>=3.12',
     'url': 'https://gitlab.com/aedev-group/aedev_project_vars',
-    'version': '0.3.17',
+    'version': '0.3.18',
     'zip_safe': True,
 }
 
