@@ -161,6 +161,7 @@ import warnings
 
 from collections import OrderedDict
 from collections.abc import Callable, Iterable, Sequence
+from fnmatch import fnmatchcase
 from typing import Any, OrderedDict as OrderedDictType, cast
 
 from packaging.version import Version
@@ -192,7 +193,7 @@ from aedev.commands import (                                                    
     editable_project_root_path, in_prj_dir_venv, git_remote_domain_group, git_remotes, git_tag_list)
 
 
-__version__ = '0.3.18'
+__version__ = '0.3.19'
 
 
 # PDV_* constants holding default values of all user/project specific configuration  ----------------------------------
@@ -561,7 +562,7 @@ class ProjectDevVars(dict[str, PdvVarValType]):
 
         self.disable_non_string_fetch_warning = False  #: set to True to disable warning on access to non-str-item-value
 
-        self._init_pdv(var_values)
+        self._init_pdv(var_values)          # init project vars from constants and OS env overloads
         self._load_requirements()           # load info from all *requirements.txt files
         self._load_descriptions()           # load README* files
         self._compile_remote_vars()         # compile the git host remote values
@@ -985,6 +986,10 @@ class ProjectDevVars(dict[str, PdvVarValType]):
             self['tests_requires'] = _package_list(os_path_join(project_path, self['TESTS_FOLDER'], req_file_name))
         if 'editable_project_path' not in self:
             self['editable_project_path'] = editable_project_root_path(project_name)
+        if 'cooldown_excluded_projects' not in self:
+            self['cooldown_excluded_projects'] = [  # only run&tests reqs (aedev_project_tpls.fSt-PutMar-.gitlab-ci.yml)
+                _prj for _prj in self.pdv_val('install_requires') + self.pdv_val('tests_requires')
+                if any(fnmatchcase(_prj, msk) for msk in self['PYPI_COOLDOWN_EXCLUDES'].split(","))]
 
     # public methods ==================================================================================================
 
