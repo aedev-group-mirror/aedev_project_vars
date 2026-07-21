@@ -1233,6 +1233,7 @@ class TestProjectDevVars:
         assert pdv.pdv_val('docs_requires') == []
         assert pdv.pdv_val('install_requires') == []
         assert pdv.pdv_val('tests_requires') == []
+        assert pdv.pdv_val('cooldown_excluded_projects') == []
 
         assert pdv.pdv_val('portions_packages') == []
         assert not pdv.pdv_val('project_packages')
