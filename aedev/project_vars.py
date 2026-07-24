@@ -193,7 +193,7 @@ from aedev.commands import (                                                    
     editable_project_root_path, in_prj_dir_venv, git_remote_domain_group, git_remotes, git_tag_list)
 
 
-__version__ = '0.3.19'
+__version__ = '0.3.20'
 
 
 # PDV_* constants holding default values of all user/project specific configuration  ----------------------------------
@@ -860,15 +860,15 @@ class ProjectDevVars(dict[str, PdvVarValType]):
         if 'portion_name' not in self:
             self['portion_name'] = py_mo.portion_name if namespace_name else ""
         portion_name = self['portion_name']
-        if 'version_file' not in self:  # needed by _init_project_type(), so use main_file_path() on given project_type
-            file_path = project_main_file(import_name, project_path=project_path)
-            if not file_path and self['project_type']:
-                file_path = main_file_path(project_path, self['project_type'], namespace_name=namespace_name)
-            self['version_file'] = file_path
-        version_file = self['version_file']
         if 'project_type' not in self:
             self['project_type'] = self._init_project_type()
         project_type = self['project_type']
+        if 'version_file' not in self:
+            file_path = project_main_file(import_name, project_path=project_path)
+            if not file_path and project_type:
+                file_path = main_file_path(project_path, project_type, namespace_name=namespace_name)
+            self['version_file'] = file_path
+        version_file = self['version_file']
 
         if 'project_version' not in self:
             self['project_version'] = code_file_version(version_file)
@@ -905,10 +905,10 @@ class ProjectDevVars(dict[str, PdvVarValType]):
 
     def _init_project_type(self) -> str:
         """ determine project type from project_path, project_name, namespace_name, portion_name and version_file. """
-        project_name = self['project_name']
         project_path = self['project_path']
-        version_file = self['version_file']
+        project_name = self['project_name']
         namespace_name = self['namespace_name']
+        portion_name = self['portion_name']     # project_name[len(namespace_name) + 1:] if namespace_name else ""
 
         if project_name.endswith('_playground'):                    # could have a 'main' + PY_EXT file in project root
             project_type = PLAYGROUND_PRJ
@@ -918,9 +918,11 @@ class ProjectDevVars(dict[str, PdvVarValType]):
             project_type = DJANGO_PRJ
         elif project_name == namespace_name + '_' + namespace_name:
             project_type = ROOT_PRJ
-        elif os_path_basename(version_file) == PY_INIT:
+        elif os_path_isfile(os_path_join(project_path, project_name, PY_INIT)) \
+                or os_path_isfile(os_path_join(project_path, namespace_name, portion_name, PY_INIT)):
             project_type = PACKAGE_PRJ
-        elif os_path_basename(version_file) in (project_name + PY_EXT, self['portion_name'] + PY_EXT):
+        elif os_path_isfile(os_path_join(project_path, project_name + PY_EXT)) \
+                or os_path_isfile(os_path_join(project_path, namespace_name, portion_name + PY_EXT)):
             project_type = MODULE_PRJ
         elif os_path_basename(project_path) in self.pdv_val('PARENT_FOLDERS'):
             project_type = PARENT_PRJ

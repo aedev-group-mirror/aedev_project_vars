@@ -1,4 +1,4 @@
-# THIS FILE IS EXCLUSIVELY MAINTAINED by the project aedev.project_tpls v0.3.82
+# THIS FILE IS EXCLUSIVELY MAINTAINED by the project aedev.project_tpls v0.3.87
 """ setup of aedev namespace module portion project_vars: project development variables. """
 import pathlib
 import sys
@@ -82,7 +82,7 @@ setup_kwargs: dict[str, Any] = {
     },
     'python_requires': '>=3.12',
     'url': 'https://gitlab.com/aedev-group/aedev_project_vars',
-    'version': '0.3.19',
+    'version': '0.3.20',
     'zip_safe': True,
 }
 
