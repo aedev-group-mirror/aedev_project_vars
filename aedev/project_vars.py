@@ -168,7 +168,7 @@ from packaging.version import Version
 from setuptools import find_namespace_packages, find_packages
 
 from ae.base import (                                                                                   # type: ignore
-    DEF_PROJECT_PARENT_FOLDER, DOCS_FOLDER, PACKAGE_INCLUDE_FILES_PREFIX, PY_EXT, PY_INIT, TEMPLATES_FOLDER,
+    DEF_PROJECT_PARENT_FOLDER, DOCS_FOLDER, PACKAGE_INCLUDE_FILES_PREFIX, PY_EXT, PY_INIT, PY_MAIN, TEMPLATES_FOLDER,
     TESTS_FOLDER,
     deep_dict_update, evaluate_literal, norm_path,
     os_path_abspath, os_path_join, os_path_isfile, os_path_dirname, os_path_basename, os_path_isdir, os_path_relpath,
@@ -193,7 +193,7 @@ from aedev.commands import (                                                    
     editable_project_root_path, in_prj_dir_venv, git_remote_domain_group, git_remotes, git_tag_list)
 
 
-__version__ = '0.3.20'
+__version__ = '0.3.21'
 
 
 # PDV_* constants holding default values of all user/project specific configuration  ----------------------------------
@@ -864,23 +864,22 @@ class ProjectDevVars(dict[str, PdvVarValType]):
             self['project_type'] = self._init_project_type()
         project_type = self['project_type']
         if 'version_file' not in self:
-            file_path = project_main_file(import_name, project_path=project_path)
-            if not file_path and project_type:
-                file_path = main_file_path(project_path, project_type, namespace_name=namespace_name)
-            self['version_file'] = file_path
+            self['version_file'] = (project_main_file(import_name, project_path=project_path) or
+                                    main_file_path(project_path, project_type, namespace_name=namespace_name))
         version_file = self['version_file']
 
         if 'project_version' not in self:
             self['project_version'] = code_file_version(version_file)
-        if 'package_path' not in self:  # prj-root for PRJ_APP, namespace/portion-dir for namespace-PRJ_PACKAGE
-            # `py_mo.package_dir_path` is relative&wrong e.g. for PRJ_APP because has extra prj_/package_name sub-folder
-            # `os_path_join(project_path, *namespace_name.split("."), portion_name)` does not work for non-namespace-pkg
-            if project_type == PACKAGE_PRJ and namespace_name == "":
-                self['package_path'] = os_path_join(project_path, project_name)
-            else:
-                self['package_path'] = os_path_join(project_path, *namespace_name.split("."), portion_name)
+        if 'package_path' not in self:                  # actually used only by the project types: PACKAGE_PRJ, ROOT_PRJ
+            pkg_root = _pp if os_path_isdir(_pp := os_path_join(project_path, "src")) else project_path
+            if namespace_name:                          # namespace/portion-dir for namespace root/package/module
+                self['package_path'] = os_path_join(pkg_root, *namespace_name.split("."), portion_name)
+            elif project_type == PACKAGE_PRJ and not os_path_isfile(os_path_join(pkg_root, PY_INIT)):
+                self['package_path'] = os_path_join(pkg_root, project_name)
+            else:                                       # prj-root for APP_PRJ/DJANGO_PRJ/PLAYGROUND_PRJ
+                self['package_path'] = pkg_root
         if 'package_data' not in self:
-            self['package_data'] = self._find_package_data()
+            self['package_data'] = {"": []} if project_type == PARENT_PRJ else self._find_package_data()
         if 'pip_name' not in self and project_type in ANY_PRJ_TYPE:
             self['pip_name'] = py_mo.pip_name
         if 'project_packages' not in self:
@@ -912,17 +911,21 @@ class ProjectDevVars(dict[str, PdvVarValType]):
 
         if project_name.endswith('_playground'):                    # could have a 'main' + PY_EXT file in project root
             project_type = PLAYGROUND_PRJ
-        elif os_path_isfile(os_path_join(project_path, namespace_name, 'main' + PY_EXT)):
+        elif (os_path_isfile(os_path_join(project_path, namespace_name, 'main' + PY_EXT)) or
+              os_path_isfile(os_path_join(project_path, namespace_name, PY_MAIN))):
             project_type = APP_PRJ                                  # kivy-app if APP_BUILD_CFG_FILENAME in prj root
         elif os_path_isfile(os_path_join(project_path, 'manage.py')):
             project_type = DJANGO_PRJ
         elif project_name == namespace_name + '_' + namespace_name:
             project_type = ROOT_PRJ
-        elif os_path_isfile(os_path_join(project_path, project_name, PY_INIT)) \
-                or os_path_isfile(os_path_join(project_path, namespace_name, portion_name, PY_INIT)):
+        elif (os_path_isfile(os_path_join(project_path, namespace_name, portion_name, PY_INIT)) if namespace_name else
+              os_path_isfile(os_path_join(project_path, PY_INIT)) or                      # flat layout
+              os_path_isfile(os_path_join(project_path, project_name, PY_INIT)) or        # top-level layout
+              os_path_isfile(os_path_join(project_path, "src", project_name, PY_INIT))):  # src layout
             project_type = PACKAGE_PRJ
-        elif os_path_isfile(os_path_join(project_path, project_name + PY_EXT)) \
-                or os_path_isfile(os_path_join(project_path, namespace_name, portion_name + PY_EXT)):
+        elif (os_path_isfile(os_path_join(project_path, namespace_name, portion_name + PY_EXT)) if namespace_name else
+              os_path_isfile(os_path_join(project_path, project_name + PY_EXT)) or        # flat layout
+              os_path_isfile(os_path_join(project_path, "src", project_name + PY_EXT))):  # src layout
             project_type = MODULE_PRJ
         elif os_path_basename(project_path) in self.pdv_val('PARENT_FOLDERS'):
             project_type = PARENT_PRJ
