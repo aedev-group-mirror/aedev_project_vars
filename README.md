@@ -1,16 +1,16 @@
 <!-- THIS FILE IS EXCLUSIVELY MAINTAINED by the project aedev.aedev v0.3.33 -->
 <!-- THIS FILE IS EXCLUSIVELY MAINTAINED by the project aedev.namespace_root_tpls vlocal -->
-# project_vars 0.3.21
+# project_vars 0.3.22
 
 [![GitLab develop](https://img.shields.io/gitlab/pipeline/aedev-group/aedev_project_vars/develop?logo=python)](
     https://gitlab.com/aedev-group/aedev_project_vars)
 [![LatestPyPIrelease](
-    https://img.shields.io/gitlab/pipeline/aedev-group/aedev_project_vars/release0.3.21?logo=python)](
-    https://gitlab.com/aedev-group/aedev_project_vars/-/tree/release0.3.21)
+    https://img.shields.io/gitlab/pipeline/aedev-group/aedev_project_vars/release0.3.22?logo=python)](
+    https://gitlab.com/aedev-group/aedev_project_vars/-/tree/release0.3.22)
 [![PyPIVersions](https://img.shields.io/pypi/v/aedev_project_vars)](
     https://pypi.org/project/aedev-project-vars/#history)
 
->aedev namespace module portion project_vars: project development variables.
+>aedev namespace module portion project_vars: managing project development variables.
 
 [![Coverage](https://aedev-group.gitlab.io/aedev_project_vars/coverage.svg)](
     https://aedev-group.gitlab.io/aedev_project_vars/coverage/index.html)
