@@ -1,5 +1,5 @@
-# THIS FILE IS EXCLUSIVELY MAINTAINED by the project aedev.project_tpls v0.3.87
-""" setup of aedev namespace module portion project_vars: project development variables. """
+# THIS FILE IS EXCLUSIVELY MAINTAINED by the project aedev.project_tpls v0.3.96
+""" setup of aedev namespace module portion project_vars: managing project development variables. """
 import pathlib
 import sys
 from typing import Any
@@ -21,7 +21,7 @@ setup_kwargs: dict[str, Any] = {
         'Topic :: Software Development :: Libraries :: Python Modules',
         'Typing :: Typed',
     ],
-    'description': 'aedev namespace module portion project_vars: project development variables',
+    'description': 'aedev namespace module portion project_vars: managing project development variables',
     'extras_require': {
         'dev': [
             'aedev_project_tpls',
@@ -82,7 +82,7 @@ setup_kwargs: dict[str, Any] = {
     },
     'python_requires': '>=3.12',
     'url': 'https://gitlab.com/aedev-group/aedev_project_vars',
-    'version': '0.3.21',
+    'version': '0.3.22',
     'zip_safe': True,
 }
 
