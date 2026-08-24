@@ -170,7 +170,7 @@ class TestHelpers:
             write_file(oth_mod, "import aedev.project_vars as dc")
             # noinspection PyUnresolvedReferences
             from tst_other_module import dc
-            assert dc.PDV_REQ_FILE_NAME == 'requirements.txt'
+            assert dc.PDV_REQ_FILE_NAME == PDV_REQ_FILE_NAME
 
             dc.PDV_REQ_FILE_NAME = 'new_val'
             assert dc.PDV_REQ_FILE_NAME == 'new_val'
@@ -178,7 +178,7 @@ class TestHelpers:
         finally:
             if os_path_isfile(oth_mod):
                 os.remove(oth_mod)
-            dc.PDV_REQ_FILE_NAME = 'requirements.txt'  # reset aedev.project_vars-module-var-value for subsequent tests
+            dc.PDV_REQ_FILE_NAME = PDV_REQ_FILE_NAME  # reset aedev.project_vars-module-var-value for subsequent tests
 
     def test_module_var_patch_imported_in_other_module_as(self):
         oth_mod = 'another_tst_module' + PY_EXT
@@ -186,7 +186,7 @@ class TestHelpers:
             write_file(oth_mod, "from aedev.project_vars import PDV_REQ_FILE_NAME")
             # noinspection PyUnresolvedReferences
             import another_tst_module as dc
-            assert dc.PDV_REQ_FILE_NAME == 'requirements.txt'
+            assert dc.PDV_REQ_FILE_NAME == PDV_REQ_FILE_NAME
 
             dc.PDV_REQ_FILE_NAME = 'new_val'
             assert dc.PDV_REQ_FILE_NAME == 'new_val'
@@ -194,16 +194,17 @@ class TestHelpers:
         finally:
             if os_path_isfile(oth_mod):
                 os.remove(oth_mod)
+            dc.PDV_REQ_FILE_NAME = PDV_REQ_FILE_NAME  # reset aedev.project_vars-module-var-value for subsequent tests
 
     def test_module_var_patch_local_imported(self):
         import aedev.project_vars as dc
-        assert dc.PDV_REQ_FILE_NAME == 'requirements.txt'
+        assert dc.PDV_REQ_FILE_NAME == PDV_REQ_FILE_NAME
         try:
             dc.PDV_REQ_FILE_NAME = 'new_val'
             assert dc.PDV_REQ_FILE_NAME == 'new_val'
             assert PDV_REQ_FILE_NAME == 'requirements.txt'
         finally:
-            dc.PDV_REQ_FILE_NAME = 'requirements.txt'  # reset aedev.project_vars-module-var-value for subsequent tests
+            dc.PDV_REQ_FILE_NAME = PDV_REQ_FILE_NAME  # reset aedev.project_vars-module-var-value for subsequent tests
 
     def test_pdv_default_values(self):
         values = pdv_default_values()
@@ -1226,7 +1227,8 @@ class TestProjectDevVars:
         assert pdv.pdv_val('docs_requires') == []
         assert pdv.pdv_val('install_requires') == []
         assert pdv.pdv_val('tests_requires') == []
-        assert pdv.pdv_val('cooldown_excluded_projects') == []
+        assert pdv.pdv_val('check_reqs_cool') == []
+        assert pdv.pdv_val('check_reqs_hot') == []
 
         assert pdv.pdv_val('portions_packages') == []
         assert not pdv.pdv_val('project_packages')
@@ -1279,6 +1281,96 @@ class TestProjectDevVars:
 
         assert pdv['long_desc_content'] == readme_content
         assert pdv['long_desc_type'] == 'text/x-rst'
+
+    def test_requirements_load(self, tmp_path):
+        project_path = str(tmp_path)
+        cool_reqs = ("cool_a", " cool_b with args and leading space", "cool_c_w_ver==3.6.9")
+        hot_reqs = ("ae_a", "ae_b==1.2.3", "aedev_c # with comment")
+        reqs = hot_reqs + cool_reqs
+
+        write_file(os_path_join(project_path, PDV_REQ_FILE_NAME), "\n".join(reqs))
+
+        pdv = ProjectDevVars(project_path=project_path)
+
+        assert pdv['dev_requires'] == []
+        assert pdv['docs_requires'] == []
+        assert set(pdv['install_requires']) == set(_.strip().split(" ")[0] for _ in reqs)
+        assert pdv['tests_requires'] == []
+        assert set(pdv['check_reqs_cool']) == set(_.strip().split(" ")[0] for _ in cool_reqs)
+        assert set(pdv['check_reqs_hot']) == set(_.strip().split(" ")[0] for _ in hot_reqs)
+
+        write_file(os_path_join(project_path, PDV_REQ_FILE_NAME),
+                   " # comment\n\n" + "\n".join(_r for _i, _r in enumerate(reqs) if _i % 2 == 0) + "\n# comment")
+        write_file(os_path_join(project_path, TESTS_FOLDER, PDV_REQ_FILE_NAME),
+                   "\n# comment\n" + "\n".join(_r for _i, _r in enumerate(reqs) if _i % 2 == 1), make_dirs=True)
+
+        pdv = ProjectDevVars(project_path=project_path)
+
+        assert pdv['dev_requires'] == []
+        assert pdv['docs_requires'] == []
+        assert set(pdv['install_requires']) == set(_.strip().split(" ")[0] for _i, _ in enumerate(reqs) if _i % 2 == 0)
+        assert set(pdv['tests_requires']) == set(_r.strip().split(" ")[0] for _i, _r in enumerate(reqs) if _i % 2 == 1)
+        assert set(pdv['check_reqs_cool']) == set(_.strip().split(" ")[0] for _ in cool_reqs)
+        assert set(pdv['check_reqs_hot']) == set(_.strip().split(" ")[0] for _ in hot_reqs)
+
+        write_file(os_path_join(project_path, PDV_REQ_DEV_FILE_NAME),
+                   "\n# comment\n" + "\n".join(_r for _i, _r in enumerate(reqs) if _i % 2 == 1))
+
+        pdv = ProjectDevVars(project_path=project_path)
+
+        assert set(pdv['dev_requires']) == set(_r.strip().split(" ")[0] for _i, _r in enumerate(reqs) if _i % 2 == 1)
+        assert pdv['docs_requires'] == []
+        assert set(pdv['install_requires']) == set(_.strip().split(" ")[0] for _i, _ in enumerate(reqs) if _i % 2 == 0)
+        assert set(pdv['tests_requires']) == set(_r.strip().split(" ")[0] for _i, _r in enumerate(reqs) if _i % 2 == 1)
+        assert set(pdv['check_reqs_cool']) == set(_.strip().split(" ")[0] for _ in cool_reqs)
+        assert set(pdv['check_reqs_hot']) == set(_.strip().split(" ")[0] for _ in hot_reqs)
+
+        write_file(os_path_join(project_path, DOCS_FOLDER, PDV_REQ_FILE_NAME),
+                   "\n# comment\n" + "\n".join(_r for _i, _r in enumerate(reqs) if _i % 2 == 0), make_dirs=True)
+
+        pdv = ProjectDevVars(project_path=project_path)
+
+        assert set(pdv['dev_requires']) == set(_r.strip().split(" ")[0] for _i, _r in enumerate(reqs) if _i % 2 == 1)
+        assert set(pdv['docs_requires']) == set(_.strip().split(" ")[0] for _i, _ in enumerate(reqs) if _i % 2 == 0)
+        assert set(pdv['install_requires']) == set(_.strip().split(" ")[0] for _i, _ in enumerate(reqs) if _i % 2 == 0)
+        assert set(pdv['tests_requires']) == set(_r.strip().split(" ")[0] for _i, _r in enumerate(reqs) if _i % 2 == 1)
+        assert set(pdv['check_reqs_cool']) == set(_.strip().split(" ")[0] for _ in cool_reqs)
+        assert set(pdv['check_reqs_hot']) == set(_.strip().split(" ")[0] for _ in hot_reqs)
+
+    def test_requirements_load_editable(self, tmp_path):
+        project_path = str(tmp_path)
+        reqs = ["-e git+https://giturl/grp/nam.git@id#egg=aedev_a&subdirectory=dev", "-e ae_b", "-e=/full/path/aedev_c"]
+        pkgs = {"aedev_a", 'ae_b', "aedev_c"}
+
+        write_file(os_path_join(project_path, PDV_REQ_FILE_NAME), "\n".join(reqs))
+
+        pdv = ProjectDevVars(project_path=project_path)
+
+        assert pdv['dev_requires'] == []
+        assert pdv['docs_requires'] == []
+        assert set(pdv['install_requires']) == pkgs
+        assert pdv['tests_requires'] == []
+        assert pdv['check_reqs_cool'] == []
+        assert set(pdv['check_reqs_hot']) == pkgs
+
+    def test_requirements_load_external(self, tmp_path):
+        project_path = str(tmp_path)
+        sub_dir = "sub"
+        reqs = ['ae_a', f"-r {PDV_REQ_DEV_FILE_NAME}", f"-r {sub_dir}/{PDV_REQ_FILE_NAME}"]
+        pkgs = {'ae_a', 'ae_b', 'aedev_c'}
+
+        write_file(os_path_join(project_path, PDV_REQ_FILE_NAME), "\n".join(reqs))
+        write_file(os_path_join(project_path, PDV_REQ_DEV_FILE_NAME), 'ae_b')
+        write_file(os_path_join(project_path, sub_dir, PDV_REQ_FILE_NAME), 'aedev_c', make_dirs=True)
+
+        pdv = ProjectDevVars(project_path=project_path)
+
+        assert set(pdv['dev_requires']) == {'ae_b'}
+        assert pdv['docs_requires'] == []
+        assert set(pdv['install_requires']) == pkgs
+        assert pdv['tests_requires'] == []
+        assert pdv['check_reqs_cool'] == []
+        assert set(pdv['check_reqs_hot']) == pkgs
 
     def test_root_project_in_docs(self, tmp_path):
         parent_dir = os_path_join(str(tmp_path), DEF_PROJECT_PARENT_FOLDER)
