@@ -193,7 +193,7 @@ from aedev.commands import (                                                    
     editable_project_root_path, in_prj_dir_venv, git_remote_domain_group, git_remotes, git_tag_list)
 
 
-__version__ = '0.3.22'
+__version__ = '0.3.23'
 
 
 # PDV_* constants holding default values of all user/project specific configuration  ----------------------------------
@@ -958,16 +958,21 @@ class ProjectDevVars(dict[str, PdvVarValType]):
                                     dev_requires, docs_requires, install_requires, portions_packages, tests_requires.
         """
         def _package_list(req_file: str) -> list[str]:
-            packages: list[str] = []
+            pl: list[str] = []
             req_file = frozen_req_file_path(req_file)
             if os_path_isfile(req_file):
-                packages.extend(line.strip().split(' ')[0]      # remove options, keep version number
-                                for line in read_file(req_file).splitlines()
-                                if line.strip()                 # exclude empty lines
-                                and not line.startswith("#")    # exclude comments
-                                and not line.startswith("-")    # exclude -r/-e <req_file> lines
-                                )
-            return packages
+                for line in read_file(req_file).splitlines():
+                    line = line.strip()
+                    if line.startswith("-e"):           # `-e <url>@<id>#egg=<prj_name>[&subdir...][ #comment]`
+                        if len(_egg_split := line.split("#egg=")) > 1:
+                            pl.append(_egg_split[-1].split("&")[0].split(" ")[0])
+                        else:                           # or `-e <path>[ #comment]` or `-e=...`
+                            pl.append(os_path_basename(os_path_join(os_path_dirname(req_file), line[3:].split(" ")[0])))
+                    elif line.startswith("-r"):         # `-r <req_file>[ # comment]`: recursively include other file
+                        pl.extend(_package_list(os_path_join(os_path_dirname(req_file), line.split(" ")[1])))
+                    elif line and not line.startswith("#"):  # exclude empty lines and comments
+                        pl.append(line.split(" ")[0])  # remove options, only keeping version number
+            return pl
 
         namespace_name = self['namespace_name']
         project_name = self['project_name']
@@ -991,10 +996,20 @@ class ProjectDevVars(dict[str, PdvVarValType]):
             self['tests_requires'] = _package_list(os_path_join(project_path, self['TESTS_FOLDER'], req_file_name))
         if 'editable_project_path' not in self:
             self['editable_project_path'] = editable_project_root_path(project_name)
-        if 'cooldown_excluded_projects' not in self:
-            self['cooldown_excluded_projects'] = [  # only run&tests reqs (aedev_project_tpls.fSt-PutMar-.gitlab-ci.yml)
-                _prj for _prj in self.pdv_val('install_requires') + self.pdv_val('tests_requires')
-                if any(fnmatchcase(_prj, msk) for msk in self['PYPI_COOLDOWN_EXCLUDES'].split(","))]
+        if 'check_reqs_cool' not in self or 'check_reqs_hot' not in self:
+            # run&tests reqs needed for integrity checks (and for template aedev_project_tpls.fSt-PutMar-.gitlab-ci.yml)
+            cool = []
+            hot = []
+            excl = self['PYPI_COOLDOWN_EXCLUDES'].split(",")
+            for req in self.pdv_val('install_requires') + self.pdv_val('tests_requires'):
+                if any(fnmatchcase(req, msk) for msk in excl):
+                    hot.append(req)
+                else:
+                    cool.append(req)
+            if 'check_reqs_cool' not in self:
+                self['check_reqs_cool'] = cool
+            if 'check_reqs_hot' not in self:
+                self['check_reqs_hot'] = hot
 
     # public methods ==================================================================================================
 
