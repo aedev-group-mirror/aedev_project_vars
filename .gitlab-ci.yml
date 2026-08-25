@@ -1,4 +1,4 @@
-# THIS FILE IS EXCLUSIVELY MAINTAINED by the project aedev.project_tpls v0.3.101
+# THIS FILE IS EXCLUSIVELY MAINTAINED by the project aedev.project_tpls v0.3.102
 image: python:3.12
  
  
@@ -22,11 +22,26 @@ integrity:                      # run integrity tests
     - pip install --upgrade pip pipx setuptools
     - pip --version
     - >
-      pip install -U --force-reinstall --uploaded-prior-to=P9D
-      packaging setuptools anybadge flake8 mypy pylint pytest pytest-cov typing types-setuptools
+      pip install --upgrade --force-reinstall --uploaded-prior-to=P9D
+      packaging
+      setuptools
+      anybadge
+      flake8
+      mypy
+      pylint
+      pytest
+      pytest-cov
+      typing
+      types-setuptools
     - >
       pip install --upgrade --force-reinstall 
-      ae_base ae_paths ae_core ae_shell ae_managed_files aedev_base aedev_commands
+      ae_base
+      ae_paths
+      ae_core
+      ae_shell
+      ae_managed_files
+      aedev_base
+      aedev_commands
   script:
     - pipx run --spec aedev_project_manager project-manager -v check-integrity
     - |

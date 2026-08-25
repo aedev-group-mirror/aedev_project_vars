@@ -112,7 +112,8 @@ project development variable default value constants
 * :data:`PDV_MIN_PYTHON_VERSION`: the minimum version of the python runtime required for the project (e.g., `3.9`).
 * :data:`PDV_NULL_VERSION`: the initial package version, chosen to meet `PyPI` classifier requirements.
 * :data:`PDV_PARENT_FOLDERS`: a tuple of common names for parent folders that contain python project directories.
-* :data:`PDV_PYPI_COOLDOWN_EXCLUDES`: comma-list of `?`-/`*`-wildcard masks to exlude `PyPI` packages from cooldown.
+* :data:`PDV_PYPI_COOLDOWN_EXCLUDES`: comma-list of `?`-/`*`-wildcard masks to match normalized `PyPI` package names as
+  hot pip installs (excluding them from cooldown the cool-down period, configured by :data:`PDV_PYPI_COOLDOWN_PERIOD`:).
 * :data:`PDV_PYPI_COOLDOWN_PERIOD`: `PyPI` project cooldown date or duration (option value of pip --uploaded-prior-to).
 * :data:`PDV_PYTHON_REQUIRES`: the default required python version string for setup files (e.g., `>=3.9`).
 * :data:`PDV_REMOTE_ORIGIN`: the name of the git remote from which the local repository was cloned.
@@ -186,14 +187,14 @@ from aedev.base import (                                                        
     PROJECT_VERSION_SEP, PYPI_ROOT_URL, PYPI_ROOT_URL_TEST, ROOT_PRJ, TEST_PROJECTS_PARENT_FOLDER,
     VERSION_MATCHER, VERSION_PREFIX, VERSION_QUOTE,
     TemplateProjectsType,
-    code_file_title, code_file_version)
+    code_file_title, code_file_version, stripped_pip_name)
 from aedev.commands import (                                                                            # type: ignore
     GIT_FOLDER_NAME, GIT_RELEASE_REF_PREFIX, GIT_REMOTE_ORIGIN, GIT_REMOTE_UPSTREAM, GIT_VERSION_TAG_PREFIX,
     GitRemotesType,
     editable_project_root_path, in_prj_dir_venv, git_remote_domain_group, git_remotes, git_tag_list)
 
 
-__version__ = '0.3.23'
+__version__ = '0.3.24'
 
 
 # PDV_* constants holding default values of all user/project specific configuration  ----------------------------------
@@ -228,7 +229,7 @@ PDV_PARENT_FOLDERS = (
     'repos', 'source', DEF_PROJECT_PARENT_FOLDER, TEST_PROJECTS_PARENT_FOLDER, getpass.getuser())
 """ names of parent folders containing Python project directories """
 
-PDV_PYPI_COOLDOWN_EXCLUDES = "ae_*,aedev_*"             #: package names excluded from cooldown (newest gets installed)
+PDV_PYPI_COOLDOWN_EXCLUDES = "ae-*,aedev-*"             #: package names excluded from cooldown (newest gets installed)
 PDV_PYPI_COOLDOWN_PERIOD = "P9D"                        #: `PyPI` cooldown date or duration; see pip --uploaded-prior-to
 
 PDV_PYTHON_REQUIRES = f">={PDV_MIN_PYTHON_VERSION}"     #: setuptools setup() `python_requires` kwarg value (with op)
@@ -1002,7 +1003,7 @@ class ProjectDevVars(dict[str, PdvVarValType]):
             hot = []
             excl = self['PYPI_COOLDOWN_EXCLUDES'].split(",")
             for req in self.pdv_val('install_requires') + self.pdv_val('tests_requires'):
-                if any(fnmatchcase(req, msk) for msk in excl):
+                if any(fnmatchcase(stripped_pip_name(req), msk) for msk in excl):
                     hot.append(req)
                 else:
                     cool.append(req)
