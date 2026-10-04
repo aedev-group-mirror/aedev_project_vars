@@ -12,7 +12,7 @@ from packaging.version import Version
 
 from ae.base import (
     DEF_PROJECT_PARENT_FOLDER, DOCS_FOLDER, PACKAGE_INCLUDE_FILES_PREFIX,
-    PY_CACHE_FOLDER, PY_EXT, PY_INIT, PY_MAIN, TEMPLATES_FOLDER, TESTS_FOLDER,
+    PY_CACHE_FOLDER, PY_EXT, PY_INIT, PY_MAIN, TEMPLATES_FOLDER, TESTS_FOLDER, URI_SVC_SEP,
     in_wd, norm_path, os_path_basename, os_path_dirname, os_path_isdir, os_path_isfile, os_path_join, os_path_relpath,
     os_path_splitext, read_file, write_bin_file, write_file)
 from ae.system import APP_BUILD_CFG_FILENAME
@@ -115,7 +115,7 @@ class TestHelpers:
     def test_latest_remote_version(self, tmp_path):
         parent_dir = os_path_join(str(tmp_path), DEF_PROJECT_PARENT_FOLDER)
         os.makedirs(parent_dir)
-        project_path = git_clone("https://gitlab.com/ae-group", 'ae_base',
+        project_path = git_clone(f"https{URI_SVC_SEP}gitlab.com/ae-group", 'ae_base',
                                  branch_or_tag="v0.3.60", parent_path=parent_dir)
         assert project_path
         pdv = ProjectDevVars(project_path=project_path)  # 1st clone done only to determine the latest remote version
@@ -125,7 +125,7 @@ class TestHelpers:
         assert Version(remote_ver)
 
         shutil.rmtree(project_path)  # prepare 2nd clone with latest version
-        project_path = git_clone("https://gitlab.com/ae-group", 'ae_base',
+        project_path = git_clone(f"https{URI_SVC_SEP}gitlab.com/ae-group", 'ae_base',
                                  branch_or_tag=f"v{remote_ver}", parent_path=parent_dir)
         assert project_path, f"git_clone-error {remote_ver=}"
         pdv = ProjectDevVars(project_path=project_path)
@@ -764,7 +764,7 @@ class TestProjectDevVars:
         assert isinstance(pdv.pdv_val('PARENT_FOLDERS'), tuple)
 
     def test_copy(self, tmp_path):
-        with in_wd(str(tmp_path)):  # using tmp_path to prevent read of dotenv files in local project dir or above
+        with in_wd(str(tmp_path)):  # using tmp_path to prevent read of ``.env`` files in local project dir or above
             pdv = ProjectDevVars()
             cop = pdv.copy()
         assert isinstance(cop, ProjectDevVars)
