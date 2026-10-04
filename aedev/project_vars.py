@@ -80,8 +80,6 @@ project introspection helpers and constants
 
 these standalone functions provide utilities for inspecting Python source code files and project environments.
 
-* :func:`editable_project_root_path`: determines the project path of a package installed in an editable mode
-  (e.g., via `pip install -e`).
 * :func:`find_extra_modules`: determines a list of additional module names within a local package,
   excluding templates and `__init__.py` files.
 * :func:`increment_version`: increments a semantic version string (e.g., major, minor, or patch part).
@@ -135,7 +133,7 @@ imported from :mod:`ae.managed_files` (named with a `TEMPLATE_`-prefix).
 
 .. hint::
     the values of these `PDV_`-constants can be customized per project by declaring them with the same name as
-    OS environment variables or in project-specific `.env` files.
+    OS environment variables or in project-specific ``.env`` files.
 
 
 
@@ -170,7 +168,7 @@ from setuptools import find_namespace_packages, find_packages
 
 from ae.base import (                                                                                   # type: ignore
     DEF_PROJECT_PARENT_FOLDER, DOCS_FOLDER, PACKAGE_INCLUDE_FILES_PREFIX, PY_EXT, PY_INIT, PY_MAIN, TEMPLATES_FOLDER,
-    TESTS_FOLDER,
+    TESTS_FOLDER, URI_SVC_SEP,
     deep_dict_update, evaluate_literal, norm_path,
     os_path_abspath, os_path_join, os_path_isfile, os_path_dirname, os_path_basename, os_path_isdir, os_path_relpath,
     os_path_splitext, read_file, write_file)
@@ -184,7 +182,7 @@ from ae.managed_files import (                             # type: ignore # noqa
 from aedev.base import (                                                                                # type: ignore
     ALL_PRJ_TYPES, ANY_PRJ_TYPE, APP_PRJ, COMMIT_MSG_FILE_NAME, DEF_MAIN_BRANCH,
     DJANGO_PRJ, MODULE_PRJ, NO_PRJ, PACKAGE_PRJ, PARENT_PRJ, PLAYGROUND_PRJ,
-    PROJECT_VERSION_SEP, PYPI_ROOT_URL, PYPI_ROOT_URL_TEST, ROOT_PRJ, TEST_PROJECTS_PARENT_FOLDER,
+    PROJECT_VERSION_SEP, PYPI_ROOT_URL, PYPI_TEST_URL, ROOT_PRJ, TEST_PROJECTS_PARENT_FOLDER,
     VERSION_MATCHER, VERSION_PREFIX, VERSION_QUOTE,
     TemplateProjectsType,
     code_file_title, code_file_version, stripped_pip_name)
@@ -194,7 +192,7 @@ from aedev.commands import (                                                    
     editable_project_root_path, in_prj_dir_venv, git_remote_domain_group, git_remotes, git_tag_list)
 
 
-__version__ = '0.3.24'
+__version__ = '0.3.25'
 
 
 # PDV_* constants holding default values of all user/project specific configuration  ----------------------------------
@@ -209,7 +207,7 @@ PDV_COMMIT_MSG_FILE_NAME = COMMIT_MSG_FILE_NAME         #: name of the git commi
 PDV_docs_domain = 'readthedocs.io'                      #: documentation dns domain
 
 PDV_DOCS_FOLDER = DOCS_FOLDER                           #: docs folder name
-PDV_DOCS_HOST_PROTOCOL = "https://"                     #: documentation host connection protocol
+PDV_DOCS_HOST_PROTOCOL = "https" + URI_SVC_SEP          #: documentation host connection protocol
 
 PDV_GIT_RELEASE_REF_PREFIX = GIT_RELEASE_REF_PREFIX     #: project release git branch-name/ref prefix
 PDV_GIT_VERSION_TAG_PREFIX = GIT_VERSION_TAG_PREFIX     #: project version git tag prefix
@@ -240,7 +238,7 @@ PDV_REMOTE_UPSTREAM = GIT_REMOTE_UPSTREAM               #: name of git remote fr
 # pylint: disable-next=invalid-name
 PDV_repo_domain = 'gitlab.com'                          #: code repository dns domain (gitlab.com|github.com)
 PDV_REPO_GROUP_SUFFIX = "-group"                        #: repo users group name suffix (used for 'repo_group' default)
-PDV_REPO_HOST_PROTOCOL = "https://"                     #: repo host connection protocol
+PDV_REPO_HOST_PROTOCOL = "https" + URI_SVC_SEP          #: repo host connection protocol
 PDV_REPO_ISSUES_SUFFIX = "/-/issues"                    #: repo host URL suffix to the issues page (GitHub=="/issues")
 PDV_REPO_PAGES_DOMAIN = 'gitlab.io'                     #: repository pages internet/dns domain
 
@@ -393,7 +391,7 @@ def pdv_default_values() -> dict[str, Any]:
 def pdv_env_values() -> dict[str, Any]:
     """ read pdv default values from environment variables.
 
-    :return:                    dict with the pdv names as keys and its values loaded from the os environment variables.
+    :return:                    dict with the pdv names as keys and its values loaded from the OS environment variables.
     """
     values = {}
     for var_name, var_val in os.environ.items():
@@ -624,7 +622,7 @@ class ProjectDevVars(dict[str, PdvVarValType]):
         por_vars = OrderedDict()                                    # por_vars: ChildrenType
         pypi_refs_rst = []
         pypi_refs_md = []
-        url_prefix = (PYPI_ROOT_URL_TEST if self['parent_folder'] == TEST_PROJECTS_PARENT_FOLDER else PYPI_ROOT_URL
+        url_prefix = (PYPI_TEST_URL if self['parent_folder'] == TEST_PROJECTS_PARENT_FOLDER else PYPI_ROOT_URL
                       ) + "/project/"
         chi_app_options = self.children_app_options()
         for project_nam_ver in cast(list[str], self.pdv_val('portions_packages')):
@@ -678,7 +676,7 @@ class ProjectDevVars(dict[str, PdvVarValType]):
 
         if 'pypi_url' not in self and self['pip_name']:
             pypi_test = os_path_basename(os_path_dirname(self['project_path'])) == TEST_PROJECTS_PARENT_FOLDER
-            self['pypi_url'] = f"{PYPI_ROOT_URL_TEST if pypi_test else PYPI_ROOT_URL}/project/{self['pip_name']}"
+            self['pypi_url'] = f"{PYPI_TEST_URL if pypi_test else PYPI_ROOT_URL}/project/{self['pip_name']}"
 
     def _compile_setup_kwargs(self):
         """ add setup kwargs from pdv values. """
