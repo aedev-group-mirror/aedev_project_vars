@@ -96,7 +96,6 @@ these standalone functions provide utilities for inspecting Python source code f
 project development variable default value constants
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-* :data:`PDV_APP_BUILD_CFG_FILENAME`: the name of the application building configuration file (e.g. `buildozer.spec`).
 * :data:`PDV_CODE_LINE_LENGTH`: maximum length of a code line.
 * :data:`PDV_COMMIT_MSG_FILE_NAME`: the default file name for a git commit message.
 * :data:`PDV_docs_domain`: the default dns domain for documentation (e.g., `readthedocs.io`).
@@ -167,12 +166,9 @@ from packaging.version import Version
 from setuptools import find_namespace_packages, find_packages
 
 from ae.base import (                                                                                   # type: ignore
-    DEF_PROJECT_PARENT_FOLDER, DOCS_FOLDER, PACKAGE_INCLUDE_FILES_PREFIX, PY_EXT, PY_INIT, PY_MAIN, TEMPLATES_FOLDER,
-    TESTS_FOLDER, URI_SVC_SEP,
     deep_dict_update, evaluate_literal, norm_path,
     os_path_abspath, os_path_join, os_path_isfile, os_path_dirname, os_path_basename, os_path_isdir, os_path_relpath,
     os_path_splitext, read_file, write_file)
-from ae.system import APP_BUILD_CFG_FILENAME, MODULE_NAME_SEPS, project_main_file, PyMo                 # type: ignore
 from ae.paths import coll_folders, path_files, path_items, skip_py_cache_files, Collector               # type: ignore
 from ae.core import debug_out                                                                           # type: ignore
 from ae.shell import get_domain_user_var                                                                # type: ignore
@@ -180,26 +176,26 @@ from ae.managed_files import (                             # type: ignore # noqa
     TEMPLATE_PLACEHOLDER_ID_PREFIX, TEMPLATE_PLACEHOLDER_ID_SUFFIX, TEMPLATE_PLACEHOLDER_ARGS_SUFFIX,
     TEMPLATE_INCLUDE_FILE_PLACEHOLDER_ID, TEMPLATE_REPLACE_WITH_PLACEHOLDER_ID)
 from aedev.base import (                                                                                # type: ignore
-    ALL_PRJ_TYPES, ANY_PRJ_TYPE, APP_PRJ, COMMIT_MSG_FILE_NAME, DEF_MAIN_BRANCH,
-    DJANGO_PRJ, MODULE_PRJ, NO_PRJ, PACKAGE_PRJ, PARENT_PRJ, PLAYGROUND_PRJ,
-    PROJECT_VERSION_SEP, PYPI_ROOT_URL, PYPI_TEST_URL, ROOT_PRJ, TEST_PROJECTS_PARENT_FOLDER,
-    VERSION_MATCHER, VERSION_PREFIX, VERSION_QUOTE,
+    ALL_PRJ_TYPES, ANY_PRJ_TYPE, APP_PRJ, COMMIT_MSG_FILE_NAME, DEF_MAIN_BRANCH, DEF_PROJECT_PARENT_FOLDER, DOCS_FOLDER,
+    DJANGO_PRJ, MODULE_PRJ, NO_PRJ, PACKAGE_PRJ, PARENT_PRJ, PLAYGROUND_PRJ, PROJECT_VERSION_SEP,
+    PYPI_ROOT_URL, PYPI_TEST_URL, ROOT_PRJ, TEMPLATES_FOLDER, TEST_PROJECTS_PARENT_FOLDER,
+    TESTS_FOLDER, VERSION_MATCHER, VERSION_PREFIX, VERSION_QUOTE,
     TemplateProjectsType,
-    code_file_title, code_file_version, stripped_pip_name)
+    code_file_title, code_file_version, project_main_file, stripped_pip_name,
+    PyMo)
 from aedev.commands import (                                                                            # type: ignore
     GIT_FOLDER_NAME, GIT_RELEASE_REF_PREFIX, GIT_REMOTE_ORIGIN, GIT_REMOTE_UPSTREAM, GIT_VERSION_TAG_PREFIX,
     GitRemotesType,
     editable_project_root_path, in_prj_dir_venv, git_remote_domain_group, git_remotes, git_tag_list)
 
 
-__version__ = '0.3.25'
+__version__ = '0.3.26'
 
 
 # PDV_* constants holding default values of all user/project specific configuration  ----------------------------------
 
 ENV_VAR_NAME_PREFIX = 'PDV_'            #: used for env var names and the constant names declared in this module
 
-PDV_APP_BUILD_CFG_FILENAME = APP_BUILD_CFG_FILENAME     #: app building config file
 PDV_CODE_LINE_LENGTH = 120                              #: maximum length of a code line
 PDV_COMMIT_MSG_FILE_NAME = COMMIT_MSG_FILE_NAME         #: name of the git commit message file
 
@@ -207,7 +203,7 @@ PDV_COMMIT_MSG_FILE_NAME = COMMIT_MSG_FILE_NAME         #: name of the git commi
 PDV_docs_domain = 'readthedocs.io'                      #: documentation dns domain
 
 PDV_DOCS_FOLDER = DOCS_FOLDER                           #: docs folder name
-PDV_DOCS_HOST_PROTOCOL = "https" + URI_SVC_SEP          #: documentation host connection protocol
+PDV_DOCS_HOST_PROTOCOL = "https://"                     #: documentation host connection protocol
 
 PDV_GIT_RELEASE_REF_PREFIX = GIT_RELEASE_REF_PREFIX     #: project release git branch-name/ref prefix
 PDV_GIT_VERSION_TAG_PREFIX = GIT_VERSION_TAG_PREFIX     #: project version git tag prefix
@@ -238,7 +234,7 @@ PDV_REMOTE_UPSTREAM = GIT_REMOTE_UPSTREAM               #: name of git remote fr
 # pylint: disable-next=invalid-name
 PDV_repo_domain = 'gitlab.com'                          #: code repository dns domain (gitlab.com|github.com)
 PDV_REPO_GROUP_SUFFIX = "-group"                        #: repo users group name suffix (used for 'repo_group' default)
-PDV_REPO_HOST_PROTOCOL = "https" + URI_SVC_SEP          #: repo host connection protocol
+PDV_REPO_HOST_PROTOCOL = "https://"                     #: repo host connection protocol
 PDV_REPO_ISSUES_SUFFIX = "/-/issues"                    #: repo host URL suffix to the issues page (GitHub=="/issues")
 PDV_REPO_PAGES_DOMAIN = 'gitlab.io'                     #: repository pages internet/dns domain
 
@@ -275,7 +271,7 @@ def find_extra_modules(package_path: str, tpls_folder: str) -> list[str]:
     :param package_path:        path to the package folder, mostly underneath the project root folder.
     :param tpls_folder:         name of the templates folder (situated in the package folder) to exclude template files.
     :return:                    list of module import name strings (without file extension and path separators as dots).
-                                modules in :data:`PDV_TEMPLATES_FOLDER` as well as :data:`PY_INIT` modules are excluded.
+                                modules in :data:`PDV_TEMPLATES_FOLDER` as well as '__init__' + '.py' are excluded.
     """
     package_path = norm_path(package_path)
     if not os_path_isdir(package_path):
@@ -283,22 +279,24 @@ def find_extra_modules(package_path: str, tpls_folder: str) -> list[str]:
 
     def _select_file(file_path: str) -> bool:
         return (not os_path_relpath(file_path, package_path).replace("\\", "/").startswith(tpls_folder + "/")
-                and os_path_basename(file_path) != PY_INIT)
+                and os_path_basename(file_path) != '__init__' + '.py')
 
     def _create_file(file_path: str) -> str:
-        return os_path_relpath(file_path, package_path).replace("\\", "/").replace("/", ".")[:-len(PY_EXT)]
+        return os_path_relpath(file_path, package_path).replace("\\", "/").replace("/", ".")[:-len('.py')]
 
-    return path_items(os_path_join(package_path, "**", '*' + PY_EXT), selector=_select_file, creator=_create_file)
+    # noinspection bad-argument-type
+    return path_items(os_path_join(package_path, "**", '*' + '.py'), selector=_select_file, creator=_create_file)
 
 
 def frozen_req_file_path(req_file_path: str = PDV_REQ_FILE_NAME, strict: bool = False) -> str:
     """ check if a frozen requirements.txt file exists (with version numbers).
 
     :param req_file_path:       requirements-file-path (the not frozen version of it).
-    :param strict:              pass True to return an empty string if no frozen version exists.
+    :param strict:              pass `True` to return an empty string if no frozen version exists.
     :return:                    path of the frozen version of the specified `*requirements.txt` file in the same folder
-                                or if no frozen version exists: an empty string (if strict got specified as True),
-                                or (if strict is False) the specified path of the (normal|un-frozen) requirements-file.
+                                or if no frozen version exists: an empty string (if strict got specified as `True`),
+                                or (if :paramref:`.strict` is `False`) the specified path of the (normal|un-frozen)
+                                `requirements.txt`-file.
     """
     frozen_file_stub, frozen_file_ext = os_path_splitext(req_file_path)
     frozen_file_path = f'{frozen_file_stub}_frozen{frozen_file_ext}'
@@ -351,7 +349,7 @@ def main_file_path(project_path: str, project_type: str, namespace_name: str = "
     :return:                    main file path and name.
 
     .. note::
-        in contrary to :func:`~ae.system.project_main_file` this function will also work for new projects where neither
+        in contrary to :func:`~aedev.base.project_main_file` this function will also work for new projects where neither
         exists the main file nor the project root folder.
     """
     main_path = norm_path(project_path)
@@ -362,11 +360,11 @@ def main_file_path(project_path: str, project_type: str, namespace_name: str = "
 
     if project_type in (DJANGO_PRJ, PACKAGE_PRJ, ROOT_PRJ):
         main_path = os_path_join(main_path, namespace_name if project_type == ROOT_PRJ else main_stem)
-        main_name = PY_INIT
+        main_name = '__init__' + '.py'
     elif project_type == APP_PRJ:
-        main_name = 'main' + PY_EXT
+        main_name = 'main' + '.py'
     else:
-        main_name = main_stem + PY_EXT
+        main_name = main_stem + '.py'
 
     return os_path_join(main_path, main_name)
 
@@ -420,15 +418,15 @@ def project_name_guess(project_path: str, stripped_name: str = "") -> str:
         prj_nam = "_".join(first_parts)
         portion = "_".join(first_parts[1:])
 
-        if os_path_isfile(os_path_join(project_path, prj_nam + PY_EXT)):                    # module
+        if os_path_isfile(os_path_join(project_path, prj_nam + '.py')):                     # module
             return prj_nam
-        if os_path_isfile(os_path_join(project_path, *first_parts[:-1], part + PY_EXT)):    # sub-module
+        if os_path_isfile(os_path_join(project_path, *first_parts[:-1], part + '.py')):     # sub-module
             return prj_nam
-        if os_path_isfile(os_path_join(project_path, namespace, portion + PY_EXT)):         # namespace module
+        if os_path_isfile(os_path_join(project_path, namespace, portion + '.py')):          # namespace module
             return prj_nam
-        if os_path_isfile(os_path_join(project_path, *first_parts, PY_INIT)):               # package|Django
+        if os_path_isfile(os_path_join(project_path, *first_parts, '__init__' + '.py')):    # package|Django
             return prj_nam
-        if os_path_isfile(os_path_join(project_path, namespace, portion, PY_INIT)):         # namespace package
+        if os_path_isfile(os_path_join(project_path, namespace, portion, '__init__' + '.py')):  # namespace package
             return prj_nam
 
     stripped_name, *comments = re.split(r"\d{2,}", stripped_name)   # not found, so strip min.-2-digits-old-version-idx
@@ -457,7 +455,7 @@ def project_owner_name_version(project_string: str,
         project, version = prj_ver.split(PROJECT_VERSION_SEP, maxsplit=1)
     else:
         project, version = prj_ver, version_default
-    if namespace_default and not project.startswith(tuple(namespace_default + _ for _ in MODULE_NAME_SEPS)):
+    if namespace_default and not project.startswith(tuple(namespace_default + _ for _ in ('.', '_', '-'))):
         project = namespace_default + '_' + project
     return owner, project, version
 
@@ -519,8 +517,8 @@ def skip_files_lean_web(file_path: str) -> bool:
     """ file exclusion callback to reduce the deployed files on the web server to the minimum.
 
     :param file_path:       path to file to check for exclusion, relative to the project root folder.
-    :return:                boolean True, if the file specified in :paramref:`~skip_files_lean_web.file_path`
-                            has to be excluded, else False.
+    :return:                boolean `True`, if the file specified in :paramref:`~skip_files_lean_web.file_path`
+                            has to be excluded, else `False`.
     """
     return (skip_py_cache_files(file_path)
             or skip_files_migrations(file_path)
@@ -533,8 +531,8 @@ def skip_files_migrations(file_path: str) -> bool:
     """ file exclusion callback for the files under the django migrations folders.
 
     :param file_path:       path to file to check for exclusion, relative to the project root folder.
-    :return:                boolean True, if the file specified in :paramref:`~skip_files_migrations.file_path`
-                            has to be excluded, else False.
+    :return:                boolean `True`, if the file specified in :paramref:`~skip_files_migrations.file_path`
+                            has to be excluded, else `False`.
     """
     return 'migrations' in file_path.replace("\\", "/").split("/")  # os.path.sep is wrong in MS Win bash-emulation&WSL
 
@@ -559,14 +557,14 @@ class ProjectDevVars(dict[str, PdvVarValType]):
 
         super().__init__()
 
-        self.disable_non_string_fetch_warning = False  #: set to True to disable warning on access to non-str-item-value
+        self.disable_non_string_fetch_warning = False  #: set to `True` to disable warning on access to non-str-value
 
         self._init_pdv(var_values)          # init project vars from constants and OS env overloads
         self._load_requirements()           # load info from all *requirements.txt files
         self._load_descriptions()           # load README* files
         self._compile_remote_vars()         # compile the git host remote values
         self._compile_setup_kwargs()        # compile 'setup_kwargs' variable value
-        self._compile_dev_vars()            # compile development vars depending depending from other project env vars
+        self._compile_dev_vars()            # compile development vars depending on other project dev vars
 
     def __getitem__(self, var_name: str) -> str:
         """ get the string value of the project development variable with the specified var name.
@@ -648,9 +646,9 @@ class ProjectDevVars(dict[str, PdvVarValType]):
         self['children_project_vars'] = por_vars
 
         sep = os.linesep
-        self['portions_pypi_refs'] = sep.join(pypi_refs_rst)                    # templates/..._README.rst
-        self['portions_pypi_refs_md'] = sep.join(pypi_refs_md)                  # templates/..._README.md
-        self['portions_import_names'] = (sep + " " * 4).join(imp_names)         # templates/docs/..._index.rst
+        self['portions_pypi_refs'] = sep.join(pypi_refs_rst)
+        self['portions_pypi_refs_md'] = sep.join(pypi_refs_md)
+        self['portions_import_names'] = (sep + " " * 4).join(sorted(imp_names))
 
     def _compile_remote_vars(self):
         project_name = self['project_name']
@@ -744,13 +742,11 @@ class ProjectDevVars(dict[str, PdvVarValType]):
         :return:                setuptools package_data dict, where the key is an empty string (to be included for all
                                 sub-packages) and the dict item is a list of all found resource files with a relative
                                 path to the :paramref:`~_find_package_data.package_path` directory. folder names with a
-                                leading underscore (like e.g. the docs `_build`, the
-                                :data:`~ae.base.PY_CACHE_FOLDER`|`__pycache__` and the `__enamlcache__` folders) get
-                                excluded.
-                                explicitly included will be any :data:`PDV_APP_BUILD_CFG_FILENAME` file, as well as any
-                                folder name starting with :data:`~ae.base.PACKAGE_INCLUDE_FILES_PREFIX` (used e.g. by
-                                :mod:`ae.updater`), situated directly in the directory specified by
-                                :paramref:`~_find_package_data.package_path`.
+                                leading underscore (like e.g. the docs `_build`, the '__pycache__' and the
+                                `'_enamlcache__'` folders) get excluded.
+                                explicitly included will be an existing 'buildozer.spec' file, as well as any
+                                folder name starting with 'ae_' (used e.g. by :mod:`ae.updater`), situated directly in
+                                the directory specified by :paramref:`~_find_package_data.package_path`.
         """
         package_path = self['package_path']
         files = []
@@ -761,14 +757,13 @@ class ProjectDevVars(dict[str, PdvVarValType]):
                 if not any(_.startswith("_") for _ in rel_path.split("/")):
                     files.append(rel_path)
 
-        _add_file(os_path_join(package_path, self['APP_BUILD_CFG_FILENAME']))
+        _add_file(os_path_join(package_path, 'buildozer.spec'))
 
         # included folders situated in the project root folder, used e.g. by the optional ae.updater module
-        for file in glob.glob(os_path_join(package_path, PACKAGE_INCLUDE_FILES_PREFIX + "*")):
-            _add_file(file)  # add all files with PACKAGE_INCLUDE_FILES_PREFIX in package_path root folder
-        for file in glob.glob(os_path_join(package_path, PACKAGE_INCLUDE_FILES_PREFIX + "*", "**", "*"),
-                              recursive=True):
-            _add_file(file)  # add all file under package_path root folder names with the PACKAGE_INCLUDE_FILES_PREFIX
+        for file in glob.glob(os_path_join(package_path, 'ae_' + "*")):
+            _add_file(file)  # add all files with 'ae_' in package_path root folder
+        for file in glob.glob(os_path_join(package_path, 'ae_' + "*", "**", "*"), recursive=True):
+            _add_file(file)  # add all file under package_path root folder names with the 'ae_'
 
         docs_path = os_path_join(package_path, self['DOCS_FOLDER'])
         for file in glob.glob(os_path_join(docs_path, "**", "*"), recursive=True):
@@ -873,7 +868,7 @@ class ProjectDevVars(dict[str, PdvVarValType]):
             pkg_root = _pp if os_path_isdir(_pp := os_path_join(project_path, "src")) else project_path
             if namespace_name:                          # namespace/portion-dir for namespace root/package/module
                 self['package_path'] = os_path_join(pkg_root, *namespace_name.split("."), portion_name)
-            elif project_type == PACKAGE_PRJ and not os_path_isfile(os_path_join(pkg_root, PY_INIT)):
+            elif project_type == PACKAGE_PRJ and not os_path_isfile(os_path_join(pkg_root, '__init__' + '.py')):
                 self['package_path'] = os_path_join(pkg_root, project_name)
             else:                                       # prj-root for APP_PRJ/DJANGO_PRJ/PLAYGROUND_PRJ
                 self['package_path'] = pkg_root
@@ -908,23 +903,24 @@ class ProjectDevVars(dict[str, PdvVarValType]):
         namespace_name = self['namespace_name']
         portion_name = self['portion_name']     # project_name[len(namespace_name) + 1:] if namespace_name else ""
 
-        if project_name.endswith('_playground'):                    # could have a 'main' + PY_EXT file in project root
+        if project_name.endswith('_playground'):                    # could have a 'main' + '.py' file in project root
             project_type = PLAYGROUND_PRJ
-        elif (os_path_isfile(os_path_join(project_path, namespace_name, 'main' + PY_EXT)) or
-              os_path_isfile(os_path_join(project_path, namespace_name, PY_MAIN))):
-            project_type = APP_PRJ                                  # kivy-app if APP_BUILD_CFG_FILENAME in prj root
+        elif (os_path_isfile(os_path_join(project_path, namespace_name, 'main' + '.py')) or
+              os_path_isfile(os_path_join(project_path, namespace_name, '__main__' + '.py'))):
+            project_type = APP_PRJ                                  # kivy-app if 'buildozer.spec' in prj root
         elif os_path_isfile(os_path_join(project_path, 'manage.py')):
             project_type = DJANGO_PRJ
         elif project_name == namespace_name + '_' + namespace_name:
             project_type = ROOT_PRJ
-        elif (os_path_isfile(os_path_join(project_path, namespace_name, portion_name, PY_INIT)) if namespace_name else
-              os_path_isfile(os_path_join(project_path, PY_INIT)) or                        # flat layout
-              os_path_isfile(os_path_join(project_path, project_name, PY_INIT)) or          # top-level layout
-              os_path_isfile(os_path_join(project_path, "src", project_name, PY_INIT))):    # src layout
+        elif (os_path_isfile(os_path_join(project_path, namespace_name, portion_name, '__init__' + '.py'))
+                if namespace_name else
+              os_path_isfile(os_path_join(project_path, '__init__' + '.py')) or             # flat layout
+              os_path_isfile(os_path_join(project_path, project_name, '__init__' + '.py')) or  # top-level layout
+              os_path_isfile(os_path_join(project_path, "src", project_name, '__init__' + '.py'))):  # src layout
             project_type = PACKAGE_PRJ
-        elif (os_path_isfile(os_path_join(project_path, namespace_name, portion_name + PY_EXT)) if namespace_name else
-              os_path_isfile(os_path_join(project_path, project_name + PY_EXT)) or          # flat layout
-              os_path_isfile(os_path_join(project_path, "src", project_name + PY_EXT))):    # src layout
+        elif (os_path_isfile(os_path_join(project_path, namespace_name, portion_name + '.py')) if namespace_name else
+              os_path_isfile(os_path_join(project_path, project_name + '.py')) or          # flat layout
+              os_path_isfile(os_path_join(project_path, "src", project_name + '.py'))):    # src layout
             project_type = MODULE_PRJ
         elif os_path_basename(project_path) in self.pdv_val('PARENT_FOLDERS'):
             project_type = PARENT_PRJ
@@ -1036,7 +1032,7 @@ class ProjectDevVars(dict[str, PdvVarValType]):
     def errors(self, warnings_as_error: bool = False) -> list[str]:
         """ checks the completeness and integrity of the project development variable values.
 
-        :param warnings_as_error:   pass True to interpret all warnings as an error (e.g., if no AUTHOR/_EMAIL is
+        :param warnings_as_error:   pass `True` to interpret all warnings as an error (e.g., if no AUTHOR/_EMAIL is
                                     configured, or if the projects parent folder is not registered as such).
         :return:                    a list of error/warning messages.
         """

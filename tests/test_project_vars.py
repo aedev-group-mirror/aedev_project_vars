@@ -11,15 +11,12 @@ import setuptools
 from packaging.version import Version
 
 from ae.base import (
-    DEF_PROJECT_PARENT_FOLDER, DOCS_FOLDER, PACKAGE_INCLUDE_FILES_PREFIX,
-    PY_CACHE_FOLDER, PY_EXT, PY_INIT, PY_MAIN, TEMPLATES_FOLDER, TESTS_FOLDER, URI_SVC_SEP,
     in_wd, norm_path, os_path_basename, os_path_dirname, os_path_isdir, os_path_isfile, os_path_join, os_path_relpath,
     os_path_splitext, read_file, write_bin_file, write_file)
-from ae.system import APP_BUILD_CFG_FILENAME
 from ae.managed_files import TEMPLATE_PLACEHOLDER_ID_PREFIX
 from aedev.base import (
-    APP_PRJ, COMMIT_MSG_FILE_NAME, DJANGO_PRJ, MODULE_PRJ, NO_PRJ, PACKAGE_PRJ, PARENT_PRJ, PLAYGROUND_PRJ, ROOT_PRJ,
-    VERSION_PREFIX, VERSION_QUOTE)
+    APP_PRJ, COMMIT_MSG_FILE_NAME, DEF_PROJECT_PARENT_FOLDER, DJANGO_PRJ, DOCS_FOLDER, MODULE_PRJ, NO_PRJ,
+    PACKAGE_PRJ, PARENT_PRJ, PLAYGROUND_PRJ, ROOT_PRJ, TEMPLATES_FOLDER, TESTS_FOLDER, VERSION_PREFIX, VERSION_QUOTE)
 from aedev.commands import git_clone
 
 
@@ -39,7 +36,7 @@ tst_project_name = tst_namespace + '_' + tst_portion_name
 
 
 @pytest.fixture
-def new_prj_path(tmp_path):
+def new_prj_path(tmp_path) -> str:
     """ create a temporary parent folder with not existing project root path. """
     parent_dir = os_path_join(str(tmp_path), DEF_PROJECT_PARENT_FOLDER)
     os.makedirs(parent_dir)
@@ -47,7 +44,7 @@ def new_prj_path(tmp_path):
 
 
 @pytest.fixture
-def empty_prj_path(new_prj_path):
+def empty_prj_path(new_prj_path) -> str:
     """ create a temporary parent folder with an empty project root path/folder underneath. """
     os.makedirs(new_prj_path)
     return new_prj_path
@@ -71,8 +68,8 @@ class TestHelpers:
     def test_find_extra_modules_with_py_init(self, tmp_path):
         parent_dir = os_path_join(str(tmp_path), PDV_PARENT_FOLDERS[0])
         tst_mod = "tst_mod"
-        write_file(os_path_join(parent_dir, PY_INIT), "# test __init__.py", make_dirs=True)
-        write_file(os_path_join(parent_dir, tst_mod + PY_EXT), "# test module")
+        write_file(os_path_join(parent_dir, '__init__' + '.py'), "# test __init__" + '.py', make_dirs=True)
+        write_file(os_path_join(parent_dir, tst_mod + '.py'), "# test module")
 
         assert 'setup' in find_extra_modules("", "")
         assert 'aedev.project_vars' in find_extra_modules("", "")
@@ -115,7 +112,7 @@ class TestHelpers:
     def test_latest_remote_version(self, tmp_path):
         parent_dir = os_path_join(str(tmp_path), DEF_PROJECT_PARENT_FOLDER)
         os.makedirs(parent_dir)
-        project_path = git_clone(f"https{URI_SVC_SEP}gitlab.com/ae-group", 'ae_base',
+        project_path = git_clone(f"https://gitlab.com/ae-group", 'ae_base',
                                  branch_or_tag="v0.3.60", parent_path=parent_dir)
         assert project_path
         pdv = ProjectDevVars(project_path=project_path)  # 1st clone done only to determine the latest remote version
@@ -125,7 +122,7 @@ class TestHelpers:
         assert Version(remote_ver)
 
         shutil.rmtree(project_path)  # prepare 2nd clone with latest version
-        project_path = git_clone(f"https{URI_SVC_SEP}gitlab.com/ae-group", 'ae_base',
+        project_path = git_clone(f"https://gitlab.com/ae-group", 'ae_base',
                                  branch_or_tag=f"v{remote_ver}", parent_path=parent_dir)
         assert project_path, f"git_clone-error {remote_ver=}"
         pdv = ProjectDevVars(project_path=project_path)
@@ -146,26 +143,30 @@ class TestHelpers:
     def test_main_file_path(self):
         cwd = os.getcwd()
 
-        assert main_file_path("prj", APP_PRJ) == os_path_join(cwd, "prj", 'main' + PY_EXT)
-        assert main_file_path("prj", DJANGO_PRJ) == os_path_join(cwd, "prj", "prj", PY_INIT)
-        assert main_file_path("prj", MODULE_PRJ) == os_path_join(cwd, "prj", "prj" + PY_EXT)
-        assert main_file_path("prj", NO_PRJ) == os_path_join(cwd, "prj", "prj" + PY_EXT)
-        assert main_file_path("prj", PACKAGE_PRJ) == os_path_join(cwd, "prj", "prj", PY_INIT)
-        assert main_file_path("prj", PARENT_PRJ) == os_path_join(cwd, "prj", "prj" + PY_EXT)
-        assert main_file_path("prj", PLAYGROUND_PRJ) == os_path_join(cwd, "prj", "prj" + PY_EXT)
-        assert main_file_path("nsn_nsn", ROOT_PRJ, "nsn") == os_path_join(cwd, "nsn_nsn", "nsn", "nsn", PY_INIT)
+        assert main_file_path("prj", APP_PRJ) == os_path_join(cwd, "prj", 'main' + '.py')
+        assert main_file_path("prj", DJANGO_PRJ) == os_path_join(cwd, "prj", "prj", '__init__' + '.py')
+        assert main_file_path("prj", MODULE_PRJ) == os_path_join(cwd, "prj", "prj" + '.py')
+        assert main_file_path("prj", NO_PRJ) == os_path_join(cwd, "prj", "prj" + '.py')
+        assert main_file_path("prj", PACKAGE_PRJ) == os_path_join(cwd, "prj", "prj", '__init__' + '.py')
+        assert main_file_path("prj", PARENT_PRJ) == os_path_join(cwd, "prj", "prj" + '.py')
+        assert main_file_path("prj", PLAYGROUND_PRJ) == os_path_join(cwd, "prj", "prj" + '.py')
+        assert main_file_path("nsn_nsn", ROOT_PRJ, "nsn") == os_path_join(cwd, "nsn_nsn", "nsn", "nsn", 
+                                                                          '__init__' + '.py')
 
-        assert main_file_path("prj", APP_PRJ, "nsn") == os_path_join(cwd, "prj", "nsn", 'main' + PY_EXT)
-        assert main_file_path("nsn_prj", DJANGO_PRJ, "nsn") == os_path_join(cwd, "nsn_prj", "nsn", "prj", PY_INIT)
-        assert main_file_path("nsn_prj", MODULE_PRJ, "nsn") == os_path_join(cwd, "nsn_prj", "nsn", "prj" + PY_EXT)
-        assert main_file_path("nsn_prj", NO_PRJ, "nsn") == os_path_join(cwd, "nsn_prj", "nsn", "prj" + PY_EXT)
-        assert main_file_path("nsn_prj", PACKAGE_PRJ, "nsn") == os_path_join(cwd, "nsn_prj", "nsn", "prj", PY_INIT)
-        assert main_file_path("nsn_prj", PARENT_PRJ, "nsn") == os_path_join(cwd, "nsn_prj", "nsn", "prj" + PY_EXT)
-        assert main_file_path("nsn_prj", PLAYGROUND_PRJ, "nsn") == os_path_join(cwd, "nsn_prj", "nsn", "prj" + PY_EXT)
-        assert main_file_path("nsn_nsn", ROOT_PRJ, "nsn") == os_path_join(cwd, "nsn_nsn", "nsn", "nsn", PY_INIT)
+        assert main_file_path("prj", APP_PRJ, "nsn") == os_path_join(cwd, "prj", "nsn", 'main' + '.py')
+        assert main_file_path("nsn_prj", DJANGO_PRJ, "nsn") == os_path_join(cwd, "nsn_prj", "nsn", "prj", 
+                                                                            '__init__' + '.py')
+        assert main_file_path("nsn_prj", MODULE_PRJ, "nsn") == os_path_join(cwd, "nsn_prj", "nsn", "prj" + '.py')
+        assert main_file_path("nsn_prj", NO_PRJ, "nsn") == os_path_join(cwd, "nsn_prj", "nsn", "prj" + '.py')
+        assert main_file_path("nsn_prj", PACKAGE_PRJ, "nsn") == os_path_join(cwd, "nsn_prj", "nsn", "prj", 
+                                                                             '__init__' + '.py')
+        assert main_file_path("nsn_prj", PARENT_PRJ, "nsn") == os_path_join(cwd, "nsn_prj", "nsn", "prj" + '.py')
+        assert main_file_path("nsn_prj", PLAYGROUND_PRJ, "nsn") == os_path_join(cwd, "nsn_prj", "nsn", "prj" + '.py')
+        assert main_file_path("nsn_nsn", ROOT_PRJ, "nsn") == os_path_join(cwd, "nsn_nsn", "nsn", "nsn", 
+                                                                          '__init__' + '.py')
 
     def test_module_var_patch_imported_in_other_module(self):
-        oth_mod = 'tst_other_module' + PY_EXT
+        oth_mod = 'tst_other_module' + '.py'
         try:
             write_file(oth_mod, "import aedev.project_vars as dc")
             # noinspection PyUnresolvedReferences
@@ -181,7 +182,7 @@ class TestHelpers:
             dc.PDV_REQ_FILE_NAME = PDV_REQ_FILE_NAME  # reset aedev.project_vars-module-var-value for subsequent tests
 
     def test_module_var_patch_imported_in_other_module_as(self):
-        oth_mod = 'another_tst_module' + PY_EXT
+        oth_mod = 'another_tst_module' + '.py'
         try:
             write_file(oth_mod, "from aedev.project_vars import PDV_REQ_FILE_NAME")
             # noinspection PyUnresolvedReferences
@@ -226,7 +227,7 @@ class TestHelpers:
         assert 'TEMPLATE_REPLACE_WITH_PLACEHOLDER_ID' in values
 
         # PDV_/TEMPLATE_-vars defaults (w/o empty-default-val-vars like namespace_name, PDV_AUTHOR, PDV_DOCS_SUB_DOMAIN)
-        assert len(values) == 34
+        assert len(values) == 33
 
     def test_pdv_env_values_dict(self, monkeypatch):
         dict_var = ENV_VAR_NAME_PREFIX + "DICT_VAR"
@@ -293,67 +294,67 @@ class TestHelpers:
         parent_path = os_path_join(str(tmp_path), DEF_PROJECT_PARENT_FOLDER)
 
         root_path = os_path_join(parent_path, 'module00comment')
-        write_file(os_path_join(root_path, 'module' + PY_EXT), "", make_dirs=True)
+        write_file(os_path_join(root_path, 'module' + '.py'), "", make_dirs=True)
         assert project_name_guess(root_path) == "module"
 
         root_path = os_path_join(parent_path, 'prj_name_with_2_digits_i18n')    # prj/module name containing two digits
-        write_file(os_path_join(root_path, 'prj_name_with_2_digits_i18n' + PY_EXT), "", make_dirs=True)
+        write_file(os_path_join(root_path, 'prj_name_with_2_digits_i18n' + '.py'), "", make_dirs=True)
         assert project_name_guess(root_path) == "prj_name_with_2_digits_i18n"
 
         root_path = os_path_join(parent_path, 'module_old')
-        write_file(os_path_join(root_path, 'module' + PY_EXT), "", make_dirs=True)
+        write_file(os_path_join(root_path, 'module' + '.py'), "", make_dirs=True)
         assert project_name_guess(root_path) == "module"
 
         root_path = os_path_join(parent_path, 'mod_ule90comment')
-        write_file(os_path_join(root_path, 'mod_ule' + PY_EXT), "", make_dirs=True)
+        write_file(os_path_join(root_path, 'mod_ule' + '.py'), "", make_dirs=True)
         assert project_name_guess(root_path) == "mod_ule"
 
         root_path = os_path_join(parent_path, 'mod_ule_bk_up')
-        write_file(os_path_join(root_path, 'mod_ule' + PY_EXT), "", make_dirs=True)
+        write_file(os_path_join(root_path, 'mod_ule' + '.py'), "", make_dirs=True)
         assert project_name_guess(root_path) == "mod_ule"
 
         root_path = os_path_join(parent_path, 'package00comment')   # same structure like Django project
-        write_file(os_path_join(root_path, 'package', PY_INIT), "", make_dirs=True)
+        write_file(os_path_join(root_path, 'package', '__init__' + '.py'), "", make_dirs=True)
         assert project_name_guess(root_path) == "package"
 
         root_path = os_path_join(parent_path, 'package_backup')
-        write_file(os_path_join(root_path, 'package', PY_INIT), "", make_dirs=True)
+        write_file(os_path_join(root_path, 'package', '__init__' + '.py'), "", make_dirs=True)
         assert project_name_guess(root_path) == "package"
 
         root_path = os_path_join(parent_path, 'pack_age00comment')
-        write_file(os_path_join(root_path, 'pack_age', PY_INIT), "", make_dirs=True)
+        write_file(os_path_join(root_path, 'pack_age', '__init__' + '.py'), "", make_dirs=True)
         assert project_name_guess(root_path) == "pack_age"
 
         root_path = os_path_join(parent_path, 'namespace_module00comment')
-        write_file(os_path_join(root_path, 'namespace', 'module' + PY_EXT), "", make_dirs=True)
+        write_file(os_path_join(root_path, 'namespace', 'module' + '.py'), "", make_dirs=True)
         assert project_name_guess(root_path) == "namespace_module"
 
         root_path = os_path_join(parent_path, 'namespace_mod_ule00comment')
-        write_file(os_path_join(root_path, 'namespace', 'mod_ule' + PY_EXT), "", make_dirs=True)
+        write_file(os_path_join(root_path, 'namespace', 'mod_ule' + '.py'), "", make_dirs=True)
         assert project_name_guess(root_path) == "namespace_mod_ule"
 
         root_path = os_path_join(parent_path, 'namespace_mod_ule_back_up')
-        write_file(os_path_join(root_path, 'namespace', 'mod_ule' + PY_EXT), "", make_dirs=True)
+        write_file(os_path_join(root_path, 'namespace', 'mod_ule' + '.py'), "", make_dirs=True)
         assert project_name_guess(root_path) == "namespace_mod_ule"
 
         root_path = os_path_join(parent_path, 'namespace_package00comment')
-        write_file(os_path_join(root_path, 'namespace', 'package', PY_INIT), "", make_dirs=True)
+        write_file(os_path_join(root_path, 'namespace', 'package', '__init__' + '.py'), "", make_dirs=True)
         assert project_name_guess(root_path) == "namespace_package"
 
         root_path = os_path_join(parent_path, 'namespace_i18n')  # special case with two digits in project name
-        write_file(os_path_join(root_path, 'namespace', 'i18n', PY_INIT), "", make_dirs=True)
+        write_file(os_path_join(root_path, 'namespace', 'i18n', '__init__' + '.py'), "", make_dirs=True)
         assert project_name_guess(root_path) == "namespace_i18n"
 
         root_path = os_path_join(parent_path, 'namespace_pack_age00comment')
-        write_file(os_path_join(root_path, 'namespace', 'pack_age', PY_INIT), "", make_dirs=True)
+        write_file(os_path_join(root_path, 'namespace', 'pack_age', '__init__' + '.py'), "", make_dirs=True)
         assert project_name_guess(root_path) == "namespace_pack_age"
 
         root_path = os_path_join(parent_path, 'namespace_pack_age_older_backup')
-        write_file(os_path_join(root_path, 'namespace', 'pack_age', PY_INIT), "", make_dirs=True)
+        write_file(os_path_join(root_path, 'namespace', 'pack_age', '__init__' + '.py'), "", make_dirs=True)
         assert project_name_guess(root_path) == "namespace_pack_age"
 
         root_path = os_path_join(parent_path, 'app_name00comment')
-        write_file(os_path_join(root_path, 'main' + PY_EXT), "", make_dirs=True)
+        write_file(os_path_join(root_path, 'main' + '.py'), "", make_dirs=True)
         assert project_name_guess(root_path) == "app_name"
 
     def test_project_owner_name_version(self):
@@ -374,88 +375,92 @@ class TestHelpers:
         assert err
 
     def test_replace_file_version_empty_file(self, tmp_path):
-        tst_file = os_path_join(str(tmp_path), 'test_replace_file_ver' + PY_EXT)
+        tst_file = os_path_join(str(tmp_path), 'test_replace_file_ver' + '.py')
         write_file(tst_file, "")
         err = replace_file_version(tst_file)
         assert err
 
     def test_replace_file_version_multi_version(self, tmp_path):
-        tst_file = os_path_join(str(tmp_path), 'test_replace_file_ver' + PY_EXT)
-        write_file(tst_file, f"__version__ = '1.2.3'{os.linesep}__version__ = '2.3.4'")
+        tst_file = os_path_join(str(tmp_path), 'test_replace_file_ver' + '.py')
+        write_file(tst_file, '__version__' + f" = {VERSION_QUOTE}1.2.3{VERSION_QUOTE} {os.linesep}"
+                             '__version__' + f" = {VERSION_QUOTE}2.3.4{VERSION_QUOTE}")
         err = replace_file_version(tst_file)
         assert err
 
     def test_replace_file_version_major(self, tmp_path):
-        tst_file = os_path_join(str(tmp_path), 'test_replace_file_ver' + PY_EXT)
-        write_file(tst_file, f"__version__ = '1.2.3'{os.linesep}")
+        tst_file = os_path_join(str(tmp_path), 'test_replace_file_ver' + '.py')
+        write_file(tst_file, '__version__' + f" = {VERSION_QUOTE}1.2.3{VERSION_QUOTE}{os.linesep}")
 
         err = replace_file_version(tst_file, increment_part=1)
 
         assert not err
 
         content = read_file(tst_file)
-        assert "__version__ = '1.2.3'" not in content
-        assert "__version__ = '2.2.3'" in content
+        assert '__version__' + f" = {VERSION_QUOTE}1.2.3{VERSION_QUOTE}" not in content
+        assert '__version__' + f" = {VERSION_QUOTE}2.2.3{VERSION_QUOTE}" in content
 
     def test_replace_file_version_minor(self, tmp_path):
-        tst_file = os_path_join(str(tmp_path), 'test_replace_file_ver' + PY_EXT)
-        write_file(tst_file, f"__version__ = '1.2.3'{os.linesep}{os.linesep}version = '2.3.4'")
+        tst_file = os_path_join(str(tmp_path), 'test_replace_file_ver' + '.py')
+        write_file(tst_file, '__version__' + f" = {VERSION_QUOTE}1.2.3{VERSION_QUOTE}{os.linesep}{os.linesep}"
+                             f"version = {VERSION_QUOTE}2.3.4{VERSION_QUOTE}")
 
         err = replace_file_version(tst_file, increment_part=2)
 
         assert not err
 
         content = read_file(tst_file)
-        assert "__version__ = '1.2.3'" not in content
-        assert "__version__ = '1.3.3'" in content
+        assert '__version__' + f" = {VERSION_QUOTE}1.2.3{VERSION_QUOTE}" not in content
+        assert '__version__' + f" = {VERSION_QUOTE}1.3.3{VERSION_QUOTE}" in content
 
     def test_replace_file_version_build(self, tmp_path):
-        tst_file = os_path_join(str(tmp_path), 'test_replace_file_ver' + PY_EXT)
-        write_file(tst_file, f"__version__ = '1.2.3'{os.linesep}version = '2.3.4'")
+        tst_file = os_path_join(str(tmp_path), 'test_replace_file_ver' + '.py')
+        write_file(tst_file, '__version__' + f" = {VERSION_QUOTE}1.2.3{VERSION_QUOTE}{os.linesep}"
+                             f"version = {VERSION_QUOTE}2.3.4{VERSION_QUOTE}")
 
         err = replace_file_version(tst_file)
 
         assert not err
 
         content = read_file(tst_file)
-        assert "__version__ = '1.2.3'" not in content
-        assert "__version__ = '1.2.4'" in content
+        assert '__version__' + f" = {VERSION_QUOTE}1.2.3{VERSION_QUOTE}" not in content
+        assert '__version__' + f" = {VERSION_QUOTE}1.2.4{VERSION_QUOTE}" in content
 
     def test_replace_file_version_remove_suffix(self, tmp_path):
-        tst_file = os_path_join(str(tmp_path), 'test_replace_file_ver' + PY_EXT)
-        write_file(tst_file, f"__version__ = '1.2.3pre'{os.linesep}version = '2.3.4'")
+        tst_file = os_path_join(str(tmp_path), 'test_replace_file_ver' + '.py')
+        write_file(tst_file, '__version__' + f" = {VERSION_QUOTE}1.2.3pre{VERSION_QUOTE}{os.linesep}"
+                             f"version = {VERSION_QUOTE}2.3.4{VERSION_QUOTE}")
 
         err = replace_file_version(tst_file, increment_part=2)
 
         assert not err
 
         content = read_file(tst_file)
-        assert "__version__ = '1.2.3'" not in content
-        assert "__version__ = '1.3.3'" in content
+        assert '__version__' + f" = {VERSION_QUOTE}1.2.3{VERSION_QUOTE}" not in content
+        assert '__version__' + f" = {VERSION_QUOTE}1.3.3{VERSION_QUOTE}" in content
 
     def test_replace_file_version_keeping_comment(self, tmp_path):
-        tst_file = os_path_join(str(tmp_path), 'test_replace_file_ver' + PY_EXT)
-        comment_str = "  # comment string"
-        write_file(tst_file, f"__version__ = '1.2.3'{comment_str}{os.linesep}version = '2.3.4'")
+        tst_file = os_path_join(str(tmp_path), 'test_replace_file_ver' + '.py')
+        file_content = f"  # comment string{os.linesep}other_version = {VERSION_QUOTE}3.6.9{VERSION_QUOTE}"
+        write_file(tst_file, '__version__' + f" = {VERSION_QUOTE}1.2.3{VERSION_QUOTE} {file_content}")
 
         err = replace_file_version(tst_file, increment_part=1)
 
         assert not err
 
         content = read_file(tst_file)
-        assert f"__version__ = '2.2.3'{comment_str}" in content
+        assert content == '__version__' + f" = {VERSION_QUOTE}2.2.3{VERSION_QUOTE} {file_content}"
 
     def test_replace_file_version(self, tmp_path):
-        tst_file = os_path_join(str(tmp_path), 'test_replace_file_ver' + PY_EXT)
-        write_file(tst_file, f"__version__ = '1.2.3'{os.linesep}")
+        tst_file = os_path_join(str(tmp_path), 'test_replace_file_ver' + '.py')
+        write_file(tst_file, '__version__' + f" = {VERSION_QUOTE}1.2.3{VERSION_QUOTE}{os.linesep}")
 
-        err = replace_file_version(tst_file, version='1.2.6')
+        err = replace_file_version(tst_file, version='1.2.6', increment_part=0)
 
         assert not err
 
         content = read_file(tst_file)
-        assert "__version__ = '1.2.3'" not in content
-        assert "__version__ = '1.2.7'" in content
+        assert '__version__' + f" = {VERSION_QUOTE}1.2.3{VERSION_QUOTE}" not in content
+        assert '__version__' + f" = {VERSION_QUOTE}1.2.6{VERSION_QUOTE}" in content
 
     def test_root_packages_masks(self):
         assert root_packages_masks(['x']) == ['x/**/*']
@@ -476,13 +481,13 @@ class TestHelpers:
         assert skip_files_migrations(os_path_join("any folder-name", 'migrations', "any filename"))
 
     def test_skip_files_lean_web(self):
-        assert skip_files_lean_web(os_path_join("any_pkg", PY_CACHE_FOLDER, "any_filename"))
+        assert skip_files_lean_web(os_path_join("any_pkg", '__pycache__', "any_filename"))
         assert skip_files_lean_web(os_path_join("any_pkg", 'migrations', "any_filename"))
         assert skip_files_lean_web(os_path_join("any_pkg", "any_i18n_dir", "any_filename" + '.po'))
 
         assert skip_files_lean_web(os_path_join("any_pkg", 'static', "any_filename"))
 
-        assert skip_files_lean_web(os_path_join(PY_CACHE_FOLDER, "any_filename"))
+        assert skip_files_lean_web(os_path_join('__pycache__', "any_filename"))
         assert skip_files_lean_web(os_path_join('migrations', "any_filename"))
         assert skip_files_lean_web(os_path_join("any_i18n_dir", "any_filename" + '.po'))
 
@@ -493,7 +498,7 @@ class TestHelpers:
 class TestProjectDevVars:
     """ test ProjectDevVars """
     def test_app_env(self, tmp_path):
-        file_name = os_path_join(str(tmp_path), 'main' + PY_EXT)
+        file_name = os_path_join(str(tmp_path), 'main' + '.py')
         write_file(file_name, "# main app file content")
 
         pdv = ProjectDevVars(project_path=str(tmp_path))
@@ -507,9 +512,9 @@ class TestProjectDevVars:
         parent_dir = os_path_join(str(tmp_path), DEF_PROJECT_PARENT_FOLDER)
         portion_name = 'tst_ns_mod'
         project_path = os_path_join(parent_dir, nsn + '_' + portion_name)
-        module_path = os_path_join(project_path, nsn, portion_name + PY_EXT)
+        module_path = os_path_join(project_path, nsn, portion_name + '.py')
         app_options = {'repo_group': "tst_grp"}
-        write_file(module_path, f"mod_content = ''{os.linesep}__version__ = '3.3.3'{os.linesep}", make_dirs=True)
+        write_file(module_path, f"mod_content = ''\n__version__={VERSION_QUOTE}3.3.3{VERSION_QUOTE}\n", make_dirs=True)
 
         pdv = ProjectDevVars(project_path=project_path, **app_options)
 
@@ -538,8 +543,8 @@ class TestProjectDevVars:
         project_path = os_path_join(parent_dir, nsn + '_' + portion_name)
         package_path = os_path_join(project_path, nsn, portion_name)
         app_options = {'repo_group': "tst_grp"}
-        write_file(os_path_join(package_path, PY_INIT),
-                   f"pkg_ini_content = ''{os.linesep}__version__ = '6.3.6'{os.linesep}",
+        write_file(os_path_join(package_path, '__init__' + '.py'),
+                   f"pkg_ini_content = ''{os.linesep}__version__ = {VERSION_QUOTE}6.3.6{VERSION_QUOTE}{os.linesep}",
                    make_dirs=True)
 
         pdv = ProjectDevVars(project_path=project_path, **app_options)
@@ -550,7 +555,7 @@ class TestProjectDevVars:
         assert pdv['project_path'] == norm_path(project_path)
         assert pdv['project_type'] == PACKAGE_PRJ
         assert pdv['repo_group'] == app_options['repo_group']
-        assert pdv['version_file'] == norm_path(os_path_join(package_path, PY_INIT))
+        assert pdv['version_file'] == norm_path(os_path_join(package_path, '__init__' + '.py'))
 
         app_options['namespace_name'] = nsn
 
@@ -562,7 +567,7 @@ class TestProjectDevVars:
         assert pdv['project_path'] == norm_path(project_path)
         assert pdv['project_type'] == PACKAGE_PRJ
         assert pdv['repo_group'] == app_options['repo_group']
-        assert pdv['version_file'] == norm_path(os_path_join(package_path, PY_INIT))
+        assert pdv['version_file'] == norm_path(os_path_join(package_path, '__init__' + '.py'))
 
         app_options['namespace_name'] = ""
 
@@ -582,8 +587,8 @@ class TestProjectDevVars:
         project_path = os_path_join(parent_dir, nsn + '_' + nsn)
         package_path = os_path_join(project_path, nsn, nsn)
         app_options = {'repo_group': "tst_grp"}
-        write_file(os_path_join(package_path, PY_INIT),
-                   f"root_content = ''{os.linesep}__version__ = '9.9.3'{os.linesep}",
+        write_file(os_path_join(package_path, '__init__' + '.py'),
+                   f"root_content = ''{os.linesep}__version__ = {VERSION_QUOTE}9.9.3{VERSION_QUOTE}{os.linesep}",
                    make_dirs=True)
 
         pdv = ProjectDevVars(project_path=project_path, **app_options)
@@ -594,7 +599,7 @@ class TestProjectDevVars:
         assert pdv['project_path'] == norm_path(project_path)
         assert pdv['project_type'] == ROOT_PRJ
         assert pdv['repo_group'] == app_options['repo_group']
-        assert pdv['version_file'] == norm_path(os_path_join(package_path, PY_INIT))
+        assert pdv['version_file'] == norm_path(os_path_join(package_path, '__init__' + '.py'))
         assert not pdv.pdv_val('children_project_vars')
         assert not pdv.pdv_val('portions_import_names')
 
@@ -608,7 +613,7 @@ class TestProjectDevVars:
         assert pdv['project_path'] == norm_path(project_path)
         assert pdv['project_type'] == ROOT_PRJ
         assert pdv['repo_group'] == app_options['repo_group']
-        assert pdv['version_file'] == norm_path(os_path_join(package_path, PY_INIT))
+        assert pdv['version_file'] == norm_path(os_path_join(package_path, '__init__' + '.py'))
         assert not pdv.pdv_val('children_project_vars')
         assert not pdv.pdv_val('portions_import_names')
 
@@ -639,19 +644,19 @@ class TestProjectDevVars:
         module_prj_path = os_path_join(parent_dir, nsn + '_' + module_name)
         app_options = {'repo_group': "tst_grp", 'main_app_options': {'project_path': root_prj_path}}
 
-        write_file(os_path_join(root_pkg_path, PY_INIT),
-                   f"root_content = ''{os.linesep}__version__ = '111.33.63'{os.linesep}",
+        write_file(os_path_join(root_pkg_path, '__init__' + '.py'),
+                   f"root_content = ''{os.linesep}__version__ = {VERSION_QUOTE}111.33.63{VERSION_QUOTE}{os.linesep}",
                    make_dirs=True)
         write_file(os_path_join(root_prj_path, PDV_REQ_DEV_FILE_NAME),
                    nsn + '_' + project_name + os.linesep + nsn + '_' + module_name)
 
-        write_file(os_path_join(package_pkg_path, PY_INIT),
-                   f"pkg_content = ''{os.linesep}__version__ = '999.333.636'{os.linesep}",
+        write_file(os_path_join(package_pkg_path, '__init__' + '.py'),
+                   f"pkg_content = ''{os.linesep}__version__ = {VERSION_QUOTE}999.333.636{VERSION_QUOTE}{os.linesep}",
                    make_dirs=True)
-        write_file(os_path_join(package_pkg_path, package_extra_module_name + PY_EXT), "extra_content = ''")
+        write_file(os_path_join(package_pkg_path, package_extra_module_name + '.py'), "extra_content = ''")
 
         write_file(os_path_join(module_prj_path, nsn, module_name),
-                   f"mod_content = ''{os.linesep}__version__ = '6.9.699'{os.linesep}",
+                   f"mod_content = ''{os.linesep}__version__ = {VERSION_QUOTE}6.9.699{VERSION_QUOTE}{os.linesep}",
                    make_dirs=True)
 
         pdv = ProjectDevVars(project_path=root_prj_path, **app_options)
@@ -662,7 +667,7 @@ class TestProjectDevVars:
         assert pdv['project_path'] == norm_path(root_prj_path)
         assert pdv['project_type'] == ROOT_PRJ
         assert pdv['repo_group'] == app_options['repo_group']
-        assert pdv['version_file'] == norm_path(os_path_join(root_pkg_path, PY_INIT))
+        assert pdv['version_file'] == norm_path(os_path_join(root_pkg_path, '__init__' + '.py'))
 
         assert f"{nsn}_{project_name}" in pdv.pdv_val('children_project_vars')
         assert f"{nsn}_{project_name}.{package_extra_module_name}" not in pdv.pdv_val('children_project_vars')
@@ -682,7 +687,7 @@ class TestProjectDevVars:
         assert pdv['project_path'] == norm_path(root_prj_path)
         assert pdv['project_type'] == ROOT_PRJ
         assert pdv['repo_group'] == app_options['repo_group']
-        assert pdv['version_file'] == norm_path(os_path_join(root_pkg_path, PY_INIT))
+        assert pdv['version_file'] == norm_path(os_path_join(root_pkg_path, '__init__' + '.py'))
 
         assert f"{nsn}_{project_name}" in pdv.pdv_val('children_project_vars')
         assert f"{nsn}_{project_name}.{package_extra_module_name}" not in pdv.pdv_val('children_project_vars')
@@ -783,7 +788,7 @@ class TestProjectDevVars:
         assert pdv['project_type'] == DJANGO_PRJ
 
     def test_empty_setup_kwargs_doesnt_raise(self, tmp_path):
-        file_name = os_path_join(str(tmp_path), 'setup' + PY_EXT)
+        file_name = os_path_join(str(tmp_path), 'setup' + '.py')
         write_file(file_name, "pdv = {}")
 
         ProjectDevVars(project_path=str(tmp_path))
@@ -875,9 +880,9 @@ class TestProjectDevVars:
     def test_find_package_data_build_file(self, tmp_path):
         project_name = 'tst_app_with_build_file'
         pkg_path = os_path_join(str(tmp_path), project_name)
-        file1 = os_path_join(pkg_path, APP_BUILD_CFG_FILENAME)
+        file1 = os_path_join(pkg_path, 'buildozer.spec')
         path2 = os_path_join(pkg_path, 'deep_dir')
-        file2 = os_path_join(path2, APP_BUILD_CFG_FILENAME)
+        file2 = os_path_join(path2, 'buildozer.spec')
         write_file(file2, "# deeper build file content (excluded)", make_dirs=True)
         write_file(file1, "# build file content (included)")
 
@@ -895,9 +900,9 @@ class TestProjectDevVars:
         doc_path = os_path_join(pkg_path, DOCS_FOLDER)
         build_path = os_path_join(doc_path, "_build")
         auto_path = os_path_join(doc_path, "_autosummary")
-        img_path = os_path_join(doc_path, "img")
-        file1 = os_path_join(doc_path, "conf.py")
-        file2 = os_path_join(build_path, "any_build_file.py")
+        img_path = os_path_join(doc_path, 'img')
+        file1 = os_path_join(doc_path, "conf" + '.py')
+        file2 = os_path_join(build_path, "any_build_file" + '.py')
         file3 = norm_path(os_path_join(auto_path, "any_sum_file.rst"))
         file4 = norm_path(os_path_join(img_path, "my_included_pic.jpg"))
         os.makedirs(build_path)
@@ -922,7 +927,7 @@ class TestProjectDevVars:
         file1 = os_path_join(path1, 'res.ext')
         path2 = os_path_join(path1, 'res_deep')
         file2 = os_path_join(path2, 'res2.ext')
-        path2d = os_path_join(path1, PY_CACHE_FOLDER)
+        path2d = os_path_join(path1, '__pycache__')
         file2d = os_path_join(path2d, 'res2d.ext')
         file3 = os_path_join(pkg_path, 'included_widgets.kv')
         os.makedirs(path2)
@@ -986,13 +991,13 @@ class TestProjectDevVars:
     def test_find_package_data_updater(self, tmp_path):
         project_name = 'tst_app_with_updater_or_bootstrap'
         prj_path = os_path_join(str(tmp_path), project_name)
-        file1 = os_path_join(prj_path, PACKAGE_INCLUDE_FILES_PREFIX + "any_suffix")
-        path2 = os_path_join(prj_path, PACKAGE_INCLUDE_FILES_PREFIX + "deep_dir")
+        file1 = os_path_join(prj_path, 'ae_' + "any_suffix")
+        path2 = os_path_join(prj_path, 'ae_' + "deep_dir")
         file2 = os_path_join(path2, "some_included_file.ext")
         path2d = os_path_join(path2, "even_deeper")
         file2d = os_path_join(path2d, "other_included_file")
         path3 = os_path_join(prj_path, "deep_not_included_dir")
-        file3 = os_path_join(path3, PACKAGE_INCLUDE_FILES_PREFIX + "other_suffix")
+        file3 = os_path_join(path3, 'ae_' + "other_suffix")
         os.makedirs(path2d)
         os.makedirs(path3)
 
@@ -1058,7 +1063,7 @@ class TestProjectDevVars:
         assert pdv['project_path'] == empty_prj_path
         assert pdv['project_type'] == MODULE_PRJ
         assert pdv['namespace_name'] == ""
-        assert pdv['version_file'] == os_path_join(empty_prj_path, tst_project_name + PY_EXT)
+        assert pdv['version_file'] == os_path_join(empty_prj_path, tst_project_name + '.py')
 
         pdv = ProjectDevVars(project_name=tst_project_name, project_type=PACKAGE_PRJ, namespace_name=tst_namespace)
 
@@ -1067,7 +1072,7 @@ class TestProjectDevVars:
         assert pdv['project_path'] == empty_prj_path
         assert pdv['project_type'] == PACKAGE_PRJ
         assert pdv['namespace_name'] == tst_namespace
-        assert pdv['version_file'] == os_path_join(empty_prj_path, tst_namespace, tst_portion_name, PY_INIT)
+        assert pdv['version_file'] == os_path_join(empty_prj_path, tst_namespace, tst_portion_name, '__init__' + '.py')
 
         monkeypatch.chdir(str(os_path_dirname(new_prj_path)))
 
@@ -1077,7 +1082,7 @@ class TestProjectDevVars:
         assert pdv['project_name'] == tst_project_name
         assert pdv['project_path'] == new_prj_path
         assert pdv['project_type'] == PACKAGE_PRJ
-        assert pdv['version_file'] == os_path_join(new_prj_path, tst_project_name, PY_INIT)
+        assert pdv['version_file'] == os_path_join(new_prj_path, tst_project_name, '__init__' + '.py')
 
         pdv = ProjectDevVars(project_name=tst_project_name, project_type=MODULE_PRJ, namespace_name=tst_namespace)
 
@@ -1085,7 +1090,7 @@ class TestProjectDevVars:
         assert pdv['project_name'] == tst_project_name
         assert pdv['project_path'] == new_prj_path
         assert pdv['project_type'] == MODULE_PRJ
-        assert pdv['version_file'] == os_path_join(new_prj_path, tst_namespace, tst_portion_name + PY_EXT)
+        assert pdv['version_file'] == os_path_join(new_prj_path, tst_namespace, tst_portion_name + '.py')
 
     def test_ini_pdv_from_project_path(self, empty_prj_path, new_prj_path):
         pdv = ProjectDevVars(project_path=empty_prj_path)
@@ -1107,7 +1112,7 @@ class TestProjectDevVars:
         assert pdv['project_name'] == tst_project_name
         assert pdv['namespace_name'] == ""
         assert pdv['project_type'] == PACKAGE_PRJ
-        assert pdv['version_file'] == os_path_join(empty_prj_path, tst_project_name, PY_INIT)
+        assert pdv['version_file'] == os_path_join(empty_prj_path, tst_project_name, '__init__' + '.py')
 
         pdv = ProjectDevVars(project_path=empty_prj_path, project_type=PACKAGE_PRJ, namespace_name=tst_namespace)
 
@@ -1115,7 +1120,7 @@ class TestProjectDevVars:
         assert pdv['project_name'] == tst_project_name
         assert pdv['namespace_name'] == tst_namespace
         assert pdv['project_type'] == PACKAGE_PRJ
-        assert pdv['version_file'] == os_path_join(new_prj_path, tst_namespace, tst_portion_name, PY_INIT)
+        assert pdv['version_file'] == os_path_join(new_prj_path, tst_namespace, tst_portion_name, '__init__' + '.py')
 
         pdv = ProjectDevVars(project_path=new_prj_path, project_type=PACKAGE_PRJ)
 
@@ -1123,7 +1128,7 @@ class TestProjectDevVars:
         assert pdv['project_name'] == tst_project_name
         assert pdv['namespace_name'] == ""
         assert pdv['project_type'] == PACKAGE_PRJ
-        assert pdv['version_file'] == os_path_join(new_prj_path, tst_project_name, PY_INIT)
+        assert pdv['version_file'] == os_path_join(new_prj_path, tst_project_name, '__init__' + '.py')
 
         pdv = ProjectDevVars(project_path=new_prj_path, project_type=PACKAGE_PRJ, namespace_name=tst_namespace)
 
@@ -1131,7 +1136,7 @@ class TestProjectDevVars:
         assert pdv['project_name'] == tst_project_name
         assert pdv['namespace_name'] == tst_namespace
         assert pdv['project_type'] == PACKAGE_PRJ
-        assert pdv['version_file'] == os_path_join(new_prj_path, tst_namespace, tst_portion_name, PY_INIT)
+        assert pdv['version_file'] == os_path_join(new_prj_path, tst_namespace, tst_portion_name, '__init__' + '.py')
 
         pdv = ProjectDevVars(project_path=new_prj_path, project_type=MODULE_PRJ)
 
@@ -1139,7 +1144,7 @@ class TestProjectDevVars:
         assert pdv['project_name'] == tst_project_name
         assert pdv['namespace_name'] == ""
         assert pdv['project_type'] == MODULE_PRJ
-        assert pdv['version_file'] == os_path_join(new_prj_path, tst_project_name + PY_EXT)
+        assert pdv['version_file'] == os_path_join(new_prj_path, tst_project_name + '.py')
 
         pdv = ProjectDevVars(project_path=new_prj_path, project_type=MODULE_PRJ, namespace_name=tst_namespace)
 
@@ -1147,7 +1152,7 @@ class TestProjectDevVars:
         assert pdv['project_name'] == tst_project_name
         assert pdv['namespace_name'] == tst_namespace
         assert pdv['project_type'] == MODULE_PRJ
-        assert pdv['version_file'] == os_path_join(new_prj_path, tst_namespace, tst_portion_name + PY_EXT)
+        assert pdv['version_file'] == os_path_join(new_prj_path, tst_namespace, tst_portion_name + '.py')
 
     def test_ini_pdv_manuals_include(self, new_prj_path):
         docs_manual = os_path_join(new_prj_path, DOCS_FOLDER, 'man', 'sub_dir', 'tst.rst')
@@ -1172,7 +1177,7 @@ class TestProjectDevVars:
     def test_ini_pdv_without_version_file(self, new_prj_path):
         pdv = ProjectDevVars(project_path=new_prj_path, project_type=PACKAGE_PRJ)
 
-        assert pdv['version_file'].endswith(PY_INIT)
+        assert pdv['version_file'].endswith('__init__' + '.py')
 
     def test_invalid_or_empty_project_doesnt_raise(self, tmp_path):
         pdv = ProjectDevVars(project_path=str(tmp_path))
@@ -1180,7 +1185,7 @@ class TestProjectDevVars:
 
     def test_invalid_pdv_doesnt_raise(self, tmp_path):
         tmp_path = str(tmp_path)
-        file_name = os_path_join(tmp_path, 'setup' + PY_EXT)
+        file_name = os_path_join(tmp_path, 'setup' + '.py')
 
         write_file(file_name, "")
         ProjectDevVars(project_path=tmp_path)
@@ -1393,7 +1398,7 @@ class TestProjectDevVars:
         project_path = os_path_join(parent_dir, namespace)
         docs_dir = os_path_join(project_path, DOCS_FOLDER)
         tpl_dir = os_path_join(project_path, TEMPLATES_FOLDER)
-        file_name = os_path_join(project_path, namespace + PY_EXT)
+        file_name = os_path_join(project_path, namespace + '.py')
         project_version = "12.33.444"
         os.makedirs(docs_dir)
         os.makedirs(tpl_dir)
@@ -1441,7 +1446,7 @@ class TestProjectTypeAndResources:
         parent_dir = os_path_join(str(tmp_path), DEF_PROJECT_PARENT_FOLDER)
         project_name = 'app_project'
         project_path = os_path_join(parent_dir, project_name)
-        main_file = os_path_join(project_path, 'main' + PY_EXT)
+        main_file = os_path_join(project_path, 'main' + '.py')
         write_file(main_file, f"{VERSION_PREFIX}1.2.3{VERSION_QUOTE}", make_dirs=True)
         write_file(os_path_join(project_path, 'pkg_add.kv'), "package_data content", make_dirs=True)
 
@@ -1467,8 +1472,8 @@ class TestProjectTypeAndResources:
         project_path = os_path_join(parent_dir, project_name)
         namespace_sub_dir = os_path_join(project_path, namespace_name)
         write_file(os_path_join(namespace_sub_dir, portion_name, 'pkg_add.kv'), "package_data content", make_dirs=True)
-        # only for kivy app: write_file(os_path_join(project_path, APP_BUILD_CFG_FILENAME), "# build spec content")
-        write_file(os_path_join(namespace_sub_dir, 'main' + PY_EXT), f"{VERSION_PREFIX}1.2.3{VERSION_QUOTE}")
+        # only for kivy app: write_file(os_path_join(project_path, 'buildozer.spec'), "# build spec content")
+        write_file(os_path_join(namespace_sub_dir, 'main' + '.py'), f"{VERSION_PREFIX}1.2.3{VERSION_QUOTE}")
 
         pdv = ProjectDevVars(project_path=project_path)
 
@@ -1478,7 +1483,7 @@ class TestProjectTypeAndResources:
         assert pdv['project_name'] == project_name
         assert pdv['project_type'] == APP_PRJ
         assert pdv['project_version'] == '1.2.3'
-        assert pdv['version_file'] == os_path_join(namespace_sub_dir, 'main' + PY_EXT)
+        assert pdv['version_file'] == os_path_join(namespace_sub_dir, 'main' + '.py')
 
         pkg_data = pdv.pdv_val('package_data')
         assert isinstance(pkg_data, dict) and len(pkg_data) == 1
@@ -1488,8 +1493,8 @@ class TestProjectTypeAndResources:
         parent_dir = os_path_join(str(tmp_path), DEF_PROJECT_PARENT_FOLDER)
         project_name = 'appName'
         project_path = os_path_join(parent_dir, project_name)
-        write_file(os_path_join(project_path, APP_BUILD_CFG_FILENAME), "spec content", make_dirs=True)
-        write_file(os_path_join(project_path, PY_MAIN), f"{VERSION_PREFIX}1.2.3{VERSION_QUOTE}")
+        write_file(os_path_join(project_path, 'buildozer.spec'), "spec content", make_dirs=True)
+        write_file(os_path_join(project_path, '__main__' + '.py'), f"{VERSION_PREFIX}1.2.3{VERSION_QUOTE}")
 
         pdv = ProjectDevVars(project_path=project_path)
 
@@ -1499,11 +1504,11 @@ class TestProjectTypeAndResources:
         assert pdv['project_path'] == norm_path(project_path)
         assert pdv['project_type'] == APP_PRJ
         assert pdv['project_version'] == '1.2.3'
-        assert pdv['version_file'] == os_path_join(project_path, PY_MAIN)
+        assert pdv['version_file'] == os_path_join(project_path, '__main__' + '.py')
 
     def test_django_project(self, new_prj_path):
         write_file(os_path_join(new_prj_path, 'manage.py'), "any content", make_dirs=True)
-        write_file(os_path_join(new_prj_path, tst_project_name, PY_INIT),
+        write_file(os_path_join(new_prj_path, tst_project_name, '__init__' + '.py'),
                    f"{VERSION_PREFIX}1.2.3{VERSION_QUOTE}",
                    make_dirs=True)
 
@@ -1515,7 +1520,7 @@ class TestProjectTypeAndResources:
         assert pdv['project_path'] == new_prj_path
         assert pdv['project_type'] == DJANGO_PRJ
         assert pdv['project_version'] == '1.2.3'
-        assert pdv['version_file'] == os_path_join(new_prj_path, tst_project_name, PY_INIT)
+        assert pdv['version_file'] == os_path_join(new_prj_path, tst_project_name, '__init__' + '.py')
 
     def test_inexistent_project_path(self, new_prj_path):
         pdv = ProjectDevVars(project_path=new_prj_path)
@@ -1527,7 +1532,8 @@ class TestProjectTypeAndResources:
         assert pdv['project_name'] == tst_project_name
         assert pdv['project_type'] == NO_PRJ
         assert pdv['project_version'] == ''
-        assert pdv['version_file'] == os_path_join(new_prj_path, os_path_basename(new_prj_path) + PY_EXT)
+        # noinspection bad-argument-type
+        assert pdv['version_file'] == os_path_join(new_prj_path, os_path_basename(new_prj_path) + '.py')
 
     def test_invalid_project_path(self):
         project_path = "invalid:_project_path"
@@ -1542,12 +1548,12 @@ class TestProjectTypeAndResources:
         assert pdv['project_path'].endswith("/" + project_path)
         assert pdv['project_type'] == NO_PRJ
         assert pdv['project_version'] == ''
-        assert pdv['version_file'] == os_path_join(norm_path(project_path), project_path + PY_EXT)
+        assert pdv['version_file'] == os_path_join(norm_path(project_path), project_path + '.py')
 
     def test_module(self, tmp_path):
         mod_name = pkg_name = 'ttt_pkg'
         project_path = os_path_join(str(tmp_path), pkg_name)    # parent folder not in PDV_PARENT_FOLDERS
-        module_path = os_path_join(project_path, mod_name + PY_EXT)
+        module_path = os_path_join(project_path, mod_name + '.py')
         write_file(module_path, f"{VERSION_PREFIX}1.2.3{VERSION_QUOTE}", make_dirs=True)
 
         pdv = ProjectDevVars(project_path=project_path)
@@ -1561,7 +1567,7 @@ class TestProjectTypeAndResources:
         assert pdv['version_file'] == module_path
 
     def test_module_flat_layout(self, empty_prj_path):
-        module_path = os_path_join(empty_prj_path, tst_project_name + PY_EXT)
+        module_path = os_path_join(empty_prj_path, tst_project_name + '.py')
         write_file(module_path, f"{VERSION_PREFIX}1.2.3{VERSION_QUOTE}")
 
         pdv = ProjectDevVars(project_path=empty_prj_path)
@@ -1574,7 +1580,7 @@ class TestProjectTypeAndResources:
         assert pdv['version_file'] == module_path
 
     def test_module_in_namespace_module(self, empty_prj_path):
-        module_path = os_path_join(empty_prj_path, tst_namespace, tst_portion_name + PY_EXT)
+        module_path = os_path_join(empty_prj_path, tst_namespace, tst_portion_name + '.py')
         write_file(module_path, f"{VERSION_PREFIX}1.2.3{VERSION_QUOTE}", make_dirs=True)
 
         pdv = ProjectDevVars(project_path=empty_prj_path)
@@ -1588,7 +1594,7 @@ class TestProjectTypeAndResources:
         assert pdv['version_file'] == module_path
 
     def test_module_src_layout(self, empty_prj_path):
-        module_path = os_path_join(empty_prj_path, "src", tst_project_name + PY_EXT)
+        module_path = os_path_join(empty_prj_path, "src", tst_project_name + '.py')
         write_file(module_path, f"{VERSION_PREFIX}1.2.3{VERSION_QUOTE}", make_dirs=True)
 
         pdv = ProjectDevVars(project_path=empty_prj_path)
@@ -1601,7 +1607,7 @@ class TestProjectTypeAndResources:
         assert pdv['version_file'] == module_path
 
     def test_module_with_template(self, empty_prj_path):
-        write_file(os_path_join(empty_prj_path, tst_project_name + PY_EXT), f"{VERSION_PREFIX}1.2.3{VERSION_QUOTE}")
+        write_file(os_path_join(empty_prj_path, tst_project_name + '.py'), f"{VERSION_PREFIX}1.2.3{VERSION_QUOTE}")
         write_file(os_path_join(empty_prj_path, TEMPLATES_FOLDER, 'template.file'), "tpl file content", make_dirs=True)
 
         pdv = ProjectDevVars(project_path=empty_prj_path)
@@ -1610,7 +1616,7 @@ class TestProjectTypeAndResources:
         assert pdv['package_path'] == empty_prj_path
         assert pdv['project_type'] == MODULE_PRJ
         assert pdv['project_version'] == '1.2.3'
-        assert pdv['version_file'] == os_path_join(empty_prj_path, tst_project_name + PY_EXT)
+        assert pdv['version_file'] == os_path_join(empty_prj_path, tst_project_name + '.py')
 
         pkg_data = pdv.pdv_val('package_data')
         assert isinstance(pkg_data, dict) and len(pkg_data) == 1
@@ -1620,7 +1626,7 @@ class TestProjectTypeAndResources:
         namespace = 'root X'                                        # namespace name with space
         project_name = namespace + "_" + namespace
         project_path = os_path_join(str(tmp_path), project_name)    # parent folder not in PDV_PARENT_FOLDERS
-        ver_file = os_path_join(project_path, namespace, namespace + PY_EXT)
+        ver_file = os_path_join(project_path, namespace, namespace + '.py')
         write_file(ver_file, f"{VERSION_PREFIX}1.2.3{VERSION_QUOTE}", make_dirs=True)
 
         pdv = ProjectDevVars(project_path=project_path)
@@ -1638,7 +1644,7 @@ class TestProjectTypeAndResources:
         project_name = namespace + "_" + namespace
         project_path = os_path_join(str(tmp_path), project_name)    # parent folder not in PDV_PARENT_FOLDERS
         nss_dir = os_path_join(project_path, namespace, namespace)
-        write_file(os_path_join(nss_dir, PY_INIT), f"{VERSION_PREFIX}1.2.3{VERSION_QUOTE}", make_dirs=True)
+        write_file(os_path_join(nss_dir, '__init__' + '.py'), f"{VERSION_PREFIX}1.2.3{VERSION_QUOTE}", make_dirs=True)
         write_file(os_path_join(nss_dir, TEMPLATES_FOLDER, 'template.file'), "template file content", make_dirs=True)
 
         pdv = ProjectDevVars(project_path=project_path)
@@ -1649,7 +1655,7 @@ class TestProjectTypeAndResources:
         assert pdv['project_path'] == norm_path(project_path)
         assert pdv['project_type'] == ROOT_PRJ
         assert pdv['project_version'] == '1.2.3'
-        assert pdv['version_file'] == os_path_join(nss_dir, PY_INIT)
+        assert pdv['version_file'] == os_path_join(nss_dir, '__init__' + '.py')
 
         pkg_data = pdv.pdv_val('package_data')
         assert isinstance(pkg_data, dict) and len(pkg_data) == 1
@@ -1660,7 +1666,7 @@ class TestProjectTypeAndResources:
         project_name = tst_namespace + "_" + tst_namespace
         project_path = os_path_join(parent_dir, project_name)
         package_path = os_path_join(project_path, tst_namespace, tst_namespace)
-        ver_file = os_path_join(package_path, PY_INIT)
+        ver_file = os_path_join(package_path, '__init__' + '.py')
         write_file(ver_file, f"{VERSION_PREFIX}1.2.3{VERSION_QUOTE}", make_dirs=True)
 
         pdv = ProjectDevVars(project_path=project_path)
@@ -1684,7 +1690,8 @@ class TestProjectTypeAndResources:
         assert pdv['project_path'] == empty_prj_path
         assert pdv['project_type'] == NO_PRJ
         assert pdv['project_version'] == ''
-        assert pdv['version_file'] == os_path_join(empty_prj_path, os_path_basename(empty_prj_path) + PY_EXT)
+        # noinspection bad-argument-type
+        assert pdv['version_file'] == os_path_join(empty_prj_path, os_path_basename(empty_prj_path) + '.py')
 
     def test_no_project_type(self, empty_prj_path):
         pdv = ProjectDevVars(project_path=empty_prj_path)
@@ -1695,13 +1702,13 @@ class TestProjectTypeAndResources:
         assert pdv['project_path'] == norm_path(empty_prj_path)
         assert pdv['project_type'] == NO_PRJ
         assert pdv['project_version'] == ''
-        assert pdv['version_file'] == os_path_join(empty_prj_path, os_path_basename(empty_prj_path) + PY_EXT)
+        # noinspection bad-argument-type
+        assert pdv['version_file'] == os_path_join(empty_prj_path, os_path_basename(empty_prj_path) + '.py')
 
     def test_package_flat_layout(self, empty_prj_path):
         package_root = empty_prj_path
-        tst_file1 = os_path_join(package_root, PY_INIT)
-        tst_file2 = os_path_join(package_root, "extra_mod_name" + PY_EXT)
-        # noinspection PyTypeChecker
+        tst_file1 = os_path_join(package_root, '__init__' + '.py')
+        tst_file2 = os_path_join(package_root, "extra_mod_name" + '.py')
         write_file(tst_file1, f"{VERSION_PREFIX}1.2.3{VERSION_QUOTE}", make_dirs=True)
         write_file(tst_file2, "var_name = 6")
 
@@ -1719,8 +1726,8 @@ class TestProjectTypeAndResources:
     def test_package_in_namespace(self, empty_prj_path):
         mod_name = 'xtra_module1'
         package_root = os_path_join(empty_prj_path, tst_namespace, tst_portion_name)
-        tst_file1 = os_path_join(package_root, PY_INIT)
-        tst_file2 = os_path_join(package_root, mod_name + PY_EXT)
+        tst_file1 = os_path_join(package_root, '__init__' + '.py')
+        tst_file2 = os_path_join(package_root, mod_name + '.py')
         write_file(tst_file1, f"{VERSION_PREFIX}1.2.3{VERSION_QUOTE}", make_dirs=True)
         write_file(tst_file2, "var_name = 6")
 
@@ -1737,7 +1744,7 @@ class TestProjectTypeAndResources:
 
     def test_package_src_layout(self, empty_prj_path):
         pkg_path = os_path_join(empty_prj_path, "src", tst_project_name)
-        ver_path = os_path_join(pkg_path, PY_INIT)
+        ver_path = os_path_join(pkg_path, '__init__' + '.py')
         write_file(ver_path, f"{VERSION_PREFIX}1.2.3{VERSION_QUOTE}", make_dirs=True)
 
         pdv = ProjectDevVars(project_path=empty_prj_path)
@@ -1751,7 +1758,7 @@ class TestProjectTypeAndResources:
 
     def test_package_top_level_layout(self, empty_prj_path):
         pkg_path = os_path_join(empty_prj_path, tst_project_name)
-        ver_path = os_path_join(pkg_path, PY_INIT)
+        ver_path = os_path_join(pkg_path, '__init__' + '.py')
         write_file(ver_path, f"{VERSION_PREFIX}1.2.3{VERSION_QUOTE}", make_dirs=True)
 
         pdv = ProjectDevVars(project_path=empty_prj_path)
@@ -1765,7 +1772,7 @@ class TestProjectTypeAndResources:
 
     def test_package_with_namespace(self, empty_prj_path):
         pkg_path = os_path_join(empty_prj_path, tst_namespace, tst_portion_name)
-        ver_path = os_path_join(pkg_path, PY_INIT)
+        ver_path = os_path_join(pkg_path, '__init__' + '.py')
         write_file(ver_path, f"{VERSION_PREFIX}1.2.3{VERSION_QUOTE}", make_dirs=True)
 
         pdv = ProjectDevVars(project_path=empty_prj_path)
@@ -1779,7 +1786,8 @@ class TestProjectTypeAndResources:
 
     def test_package_with_template(self, empty_prj_path):
         pkg_path = os_path_join(empty_prj_path, tst_project_name)
-        write_file(ver_path := os_path_join(pkg_path, PY_INIT), f"{VERSION_PREFIX}1.2.3{VERSION_QUOTE}", make_dirs=True)
+        ver_path = os_path_join(pkg_path, '__init__' + '.py')
+        write_file(ver_path, f"{VERSION_PREFIX}1.2.3{VERSION_QUOTE}", make_dirs=True)
         write_file(os_path_join(pkg_path, TEMPLATES_FOLDER, 'template.file'), "template file content", make_dirs=True)
 
         pdv = ProjectDevVars(project_path=empty_prj_path)
@@ -1820,7 +1828,7 @@ class TestProjectTypeAndResources:
         parent_dir = os_path_join(str(tmp_path), DEF_PROJECT_PARENT_FOLDER)
         project_name = 'test_project_playground'
         project_path = os_path_join(parent_dir, project_name)
-        ver_file = os_path_join(project_path, project_name + PY_EXT)
+        ver_file = os_path_join(project_path, project_name + '.py')
         write_file(ver_file, f"{VERSION_PREFIX}1.2.3{VERSION_QUOTE}", make_dirs=True)
 
         pdv = ProjectDevVars(project_path=project_path)
@@ -1835,9 +1843,8 @@ class TestProjectTypeAndResources:
 
     def test_sub_package(self, empty_prj_path):
         mod_name = 'x_module1'
-        tst_file1 = os_path_join(empty_prj_path, PY_INIT)
-        tst_file2 = os_path_join(empty_prj_path, mod_name + PY_EXT)
-        # noinspection PyTypeChecker
+        tst_file1 = os_path_join(empty_prj_path, '__init__' + '.py')
+        tst_file2 = os_path_join(empty_prj_path, mod_name + '.py')
         write_file(tst_file1, f"{VERSION_PREFIX}1.2.3{VERSION_QUOTE}")
         write_file(tst_file2, "v_nam = 6")
 
@@ -1860,16 +1867,16 @@ class TestProjectTypeAndResources:
         assert pdv['project_path'] == norm_path(TESTS_FOLDER)
         assert pdv['project_type'] == NO_PRJ
         assert pdv['project_version'] == ''
-        assert pdv['version_file'] == os_path_join(norm_path(TESTS_FOLDER), TESTS_FOLDER + PY_EXT)
+        assert pdv['version_file'] == os_path_join(norm_path(TESTS_FOLDER), TESTS_FOLDER + '.py')
 
     def test_two_modules_package(self, tmp_path):
         prj_path = str(tmp_path)    # parent folder not in PDV_PARENT_FOLDERS
         prj_dir = os_path_basename(prj_path)
         mod1 = 'mod1'
         mod2 = 'mod2'
-        tst_init = os_path_join(prj_path, PY_INIT)
-        tst_file1 = os_path_join(prj_path, mod1 + PY_EXT)
-        tst_file2 = os_path_join(prj_path, mod2 + PY_EXT)
+        tst_init = os_path_join(prj_path, '__init__' + '.py')
+        tst_file1 = os_path_join(prj_path, mod1 + '.py')
+        tst_file2 = os_path_join(prj_path, mod2 + '.py')
         write_file(tst_init, f"{VERSION_PREFIX}1.2.3{VERSION_QUOTE}")
         write_file(tst_file1, "v = 6")
         write_file(tst_file2, "v = 99")
@@ -1888,8 +1895,8 @@ class TestProjectTypeAndResources:
         prj_path = str(tmp_path)    # parent folder not in PDV_PARENT_FOLDERS
         mod1 = 'mod1'
         mod2 = 'mod2'
-        tst_file1 = os_path_join(prj_path, mod1 + PY_EXT)
-        tst_file2 = os_path_join(prj_path, mod2 + PY_EXT)
+        tst_file1 = os_path_join(prj_path, mod1 + '.py')
+        tst_file2 = os_path_join(prj_path, mod2 + '.py')
         write_file(tst_file1, "v = 3")
         write_file(tst_file2, "v = 55")
 
@@ -1901,14 +1908,14 @@ class TestProjectTypeAndResources:
         assert pdv['project_path'] == norm_path(prj_path)
         assert pdv['project_type'] == NO_PRJ
         assert pdv['project_version'] == ''
-        assert pdv['version_file'] == os_path_join(prj_path, os_path_basename(prj_path) + PY_EXT)
+        assert pdv['version_file'] == os_path_join(prj_path, os_path_basename(prj_path) + '.py')
 
     def test_two_namespace_modules_no_init(self, tmp_path):
         prj_path = str(tmp_path)    # parent folder not in PDV_PARENT_FOLDERS
         mod1 = 'mod1'
         mod2 = 'mod2'
-        tst_file1 = os_path_join(prj_path, mod1 + PY_EXT)
-        tst_file2 = os_path_join(prj_path, mod2 + PY_EXT)
+        tst_file1 = os_path_join(prj_path, mod1 + '.py')
+        tst_file2 = os_path_join(prj_path, mod2 + '.py')
         write_file(tst_file1, "v = 3")
         write_file(tst_file2, "v = 55")
 
@@ -1920,4 +1927,4 @@ class TestProjectTypeAndResources:
         assert pdv['project_path'] == norm_path(prj_path)
         assert pdv['project_type'] == NO_PRJ
         assert pdv['project_version'] == ''
-        assert pdv['version_file'] == os_path_join(prj_path, os_path_basename(prj_path) + PY_EXT)
+        assert pdv['version_file'] == os_path_join(prj_path, os_path_basename(prj_path) + '.py')
