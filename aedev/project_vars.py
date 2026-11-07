@@ -169,7 +169,7 @@ from ae.base import (                                                           
     deep_dict_update, evaluate_literal, norm_path,
     os_path_abspath, os_path_join, os_path_isfile, os_path_dirname, os_path_basename, os_path_isdir, os_path_relpath,
     os_path_splitext, read_file, write_file)
-from ae.paths import coll_folders, path_files, path_items, skip_py_cache_files, Collector               # type: ignore
+from ae.paths import coll_folders, path_items, skip_py_cache_files, Collector                           # type: ignore
 from ae.core import debug_out                                                                           # type: ignore
 from ae.shell import get_domain_user_var                                                                # type: ignore
 from ae.managed_files import (                             # type: ignore # noqa: F401 # pylint: disable=unused-import
@@ -189,7 +189,7 @@ from aedev.commands import (                                                    
     editable_project_root_path, in_prj_dir_venv, git_remote_domain_group, git_remotes, git_tag_list)
 
 
-__version__ = '0.3.26'
+__version__ = '0.3.27'
 
 
 # PDV_* constants holding default values of all user/project specific configuration  ----------------------------------
@@ -224,7 +224,7 @@ PDV_PARENT_FOLDERS = (
 """ names of parent folders containing Python project directories """
 
 PDV_PYPI_COOLDOWN_EXCLUDES = "ae-*,aedev-*"             #: package names excluded from cooldown (newest gets installed)
-PDV_PYPI_COOLDOWN_PERIOD = "P9D"                        #: `PyPI` cooldown date or duration; see pip --uploaded-prior-to
+PDV_PYPI_COOLDOWN_PERIOD = "P3D"                        #: `PyPI` cooldown date or duration; see pip --uploaded-prior-to
 
 PDV_PYTHON_REQUIRES = f">={PDV_MIN_PYTHON_VERSION}"     #: setuptools setup() `python_requires` kwarg value (with op)
 
@@ -599,17 +599,6 @@ class ProjectDevVars(dict[str, PdvVarValType]):
             self['children_project_vars'] = {
                 os_path_basename(chi_prj_path): ProjectDevVars(project_path=chi_prj_path, **self.children_app_options())
                 for chi_prj_path in coll.paths}
-
-        docs_dir = os_path_join(self['project_path'], self['DOCS_FOLDER'])
-        extra_docs = path_files(os_path_join(docs_dir, 'man', "**", "*.rst"))
-        self['manuals_include'] = ""  # needed by index.rst-tpls (project_tpls+namespace_root_tpls/fSt-PutMar-index.rst)
-        if extra_docs:
-            sep = os.linesep
-            ins = sep + " " * 4
-            self['manuals_include'] = f"manuals and tutorials{sep}" \
-                                      f"*********************{sep}{sep}" \
-                                      f".. toctree::{sep}{sep}" \
-                                      f"    {ins.join(os_path_relpath(_, docs_dir) for _ in extra_docs)}"
 
         return self
 

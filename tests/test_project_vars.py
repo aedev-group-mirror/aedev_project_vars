@@ -382,26 +382,26 @@ class TestHelpers:
 
     def test_replace_file_version_multi_version(self, tmp_path):
         tst_file = os_path_join(str(tmp_path), 'test_replace_file_ver' + '.py')
-        write_file(tst_file, '__version__' + f" = {VERSION_QUOTE}1.2.3{VERSION_QUOTE} {os.linesep}"
-                             '__version__' + f" = {VERSION_QUOTE}2.3.4{VERSION_QUOTE}")
+        write_file(tst_file, f"{VERSION_PREFIX}1.2.3{VERSION_QUOTE} {os.linesep}"
+                             f"{VERSION_PREFIX}2.3.4{VERSION_QUOTE}")
         err = replace_file_version(tst_file)
         assert err
 
     def test_replace_file_version_major(self, tmp_path):
         tst_file = os_path_join(str(tmp_path), 'test_replace_file_ver' + '.py')
-        write_file(tst_file, '__version__' + f" = {VERSION_QUOTE}1.2.3{VERSION_QUOTE}{os.linesep}")
+        write_file(tst_file, f"{VERSION_PREFIX}1.2.3{VERSION_QUOTE}{os.linesep}")
 
         err = replace_file_version(tst_file, increment_part=1)
 
         assert not err
 
         content = read_file(tst_file)
-        assert '__version__' + f" = {VERSION_QUOTE}1.2.3{VERSION_QUOTE}" not in content
-        assert '__version__' + f" = {VERSION_QUOTE}2.2.3{VERSION_QUOTE}" in content
+        assert f"{VERSION_PREFIX}1.2.3{VERSION_QUOTE}" not in content
+        assert f"{VERSION_PREFIX}2.2.3{VERSION_QUOTE}" in content
 
     def test_replace_file_version_minor(self, tmp_path):
         tst_file = os_path_join(str(tmp_path), 'test_replace_file_ver' + '.py')
-        write_file(tst_file, '__version__' + f" = {VERSION_QUOTE}1.2.3{VERSION_QUOTE}{os.linesep}{os.linesep}"
+        write_file(tst_file, f"{VERSION_PREFIX}1.2.3{VERSION_QUOTE}{os.linesep}{os.linesep}"
                              f"version = {VERSION_QUOTE}2.3.4{VERSION_QUOTE}")
 
         err = replace_file_version(tst_file, increment_part=2)
@@ -409,12 +409,12 @@ class TestHelpers:
         assert not err
 
         content = read_file(tst_file)
-        assert '__version__' + f" = {VERSION_QUOTE}1.2.3{VERSION_QUOTE}" not in content
-        assert '__version__' + f" = {VERSION_QUOTE}1.3.3{VERSION_QUOTE}" in content
+        assert f"{VERSION_PREFIX}1.2.3{VERSION_QUOTE}" not in content
+        assert f"{VERSION_PREFIX}1.3.3{VERSION_QUOTE}" in content
 
     def test_replace_file_version_build(self, tmp_path):
         tst_file = os_path_join(str(tmp_path), 'test_replace_file_ver' + '.py')
-        write_file(tst_file, '__version__' + f" = {VERSION_QUOTE}1.2.3{VERSION_QUOTE}{os.linesep}"
+        write_file(tst_file, f"{VERSION_PREFIX}1.2.3{VERSION_QUOTE}{os.linesep}"
                              f"version = {VERSION_QUOTE}2.3.4{VERSION_QUOTE}")
 
         err = replace_file_version(tst_file)
@@ -422,12 +422,12 @@ class TestHelpers:
         assert not err
 
         content = read_file(tst_file)
-        assert '__version__' + f" = {VERSION_QUOTE}1.2.3{VERSION_QUOTE}" not in content
-        assert '__version__' + f" = {VERSION_QUOTE}1.2.4{VERSION_QUOTE}" in content
+        assert f"{VERSION_PREFIX}1.2.3{VERSION_QUOTE}" not in content
+        assert f"{VERSION_PREFIX}1.2.4{VERSION_QUOTE}" in content
 
     def test_replace_file_version_remove_suffix(self, tmp_path):
         tst_file = os_path_join(str(tmp_path), 'test_replace_file_ver' + '.py')
-        write_file(tst_file, '__version__' + f" = {VERSION_QUOTE}1.2.3pre{VERSION_QUOTE}{os.linesep}"
+        write_file(tst_file, f"{VERSION_PREFIX}1.2.3pre{VERSION_QUOTE}{os.linesep}"
                              f"version = {VERSION_QUOTE}2.3.4{VERSION_QUOTE}")
 
         err = replace_file_version(tst_file, increment_part=2)
@@ -435,32 +435,32 @@ class TestHelpers:
         assert not err
 
         content = read_file(tst_file)
-        assert '__version__' + f" = {VERSION_QUOTE}1.2.3{VERSION_QUOTE}" not in content
-        assert '__version__' + f" = {VERSION_QUOTE}1.3.3{VERSION_QUOTE}" in content
+        assert f"{VERSION_PREFIX}1.2.3{VERSION_QUOTE}" not in content
+        assert f"{VERSION_PREFIX}1.3.3{VERSION_QUOTE}" in content
 
     def test_replace_file_version_keeping_comment(self, tmp_path):
         tst_file = os_path_join(str(tmp_path), 'test_replace_file_ver' + '.py')
         file_content = f"  # comment string{os.linesep}other_version = {VERSION_QUOTE}3.6.9{VERSION_QUOTE}"
-        write_file(tst_file, '__version__' + f" = {VERSION_QUOTE}1.2.3{VERSION_QUOTE} {file_content}")
+        write_file(tst_file, f"{VERSION_PREFIX}1.2.3{VERSION_QUOTE} {file_content}")
 
         err = replace_file_version(tst_file, increment_part=1)
 
         assert not err
 
         content = read_file(tst_file)
-        assert content == '__version__' + f" = {VERSION_QUOTE}2.2.3{VERSION_QUOTE} {file_content}"
+        assert content == f"{VERSION_PREFIX}2.2.3{VERSION_QUOTE} {file_content}"
 
     def test_replace_file_version(self, tmp_path):
         tst_file = os_path_join(str(tmp_path), 'test_replace_file_ver' + '.py')
-        write_file(tst_file, '__version__' + f" = {VERSION_QUOTE}1.2.3{VERSION_QUOTE}{os.linesep}")
+        write_file(tst_file, f"{VERSION_PREFIX}1.2.3{VERSION_QUOTE}{os.linesep}")
 
         err = replace_file_version(tst_file, version='1.2.6', increment_part=0)
 
         assert not err
 
         content = read_file(tst_file)
-        assert '__version__' + f" = {VERSION_QUOTE}1.2.3{VERSION_QUOTE}" not in content
-        assert '__version__' + f" = {VERSION_QUOTE}1.2.6{VERSION_QUOTE}" in content
+        assert f"{VERSION_PREFIX}1.2.3{VERSION_QUOTE}" not in content
+        assert f"{VERSION_PREFIX}1.2.6{VERSION_QUOTE}" in content
 
     def test_root_packages_masks(self):
         assert root_packages_masks(['x']) == ['x/**/*']
@@ -1153,14 +1153,6 @@ class TestProjectDevVars:
         assert pdv['namespace_name'] == tst_namespace
         assert pdv['project_type'] == MODULE_PRJ
         assert pdv['version_file'] == os_path_join(new_prj_path, tst_namespace, tst_portion_name + '.py')
-
-    def test_ini_pdv_manuals_include(self, new_prj_path):
-        docs_manual = os_path_join(new_prj_path, DOCS_FOLDER, 'man', 'sub_dir', 'tst.rst')
-        write_file(docs_manual, "# dummy RST manual", make_dirs=True)
-
-        pdv = ProjectDevVars(project_path=new_prj_path)
-
-        assert 'man' + "/" + 'sub_dir' + "/" + 'tst.rst' in pdv['manuals_include']
 
     def test_ini_pdv_repo_user(self, new_prj_path):
         os.makedirs(new_prj_path)
